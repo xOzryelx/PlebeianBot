@@ -34,7 +34,7 @@ def writeVotes(postId, authorId, vote):
 
 
 def plebVote(message):
-    vote_string = re.search("(pleb vote )(\d{1,2}\.\d{1})", message.body.lower()).group().replace("pleb vote ", '')
+    vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1})?|)", message.body.lower()).group().replace("pleb vote ", '')
     vote = ast.literal_eval(vote_string)
 
     fraud = writeVotes(message.submission.id, message.author.id, vote)
