@@ -95,6 +95,9 @@ def main():
                     message.reply("You called master\n\nWhat can I do for you today?")
                     message.mark_read()
 
+                else:
+                    print("someone did something stupid again")
+
             else:
                 message.reply("who dares to call me outside of my dungeon?")
 
