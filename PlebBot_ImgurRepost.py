@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 
 REPLY_TEMPLATE = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n" \
-                 "You can now vote how pleb this post is. The pleb scale goes from 1 to 10 (no decimals!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
+                 "You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
                  "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
                  "\n\nIf you try to vote on the post instead of this comment you have a smol pp\n\nBeep boop, I'm a bot. Currently only testing, so don't startle me"
 imgur_ids = []
@@ -114,7 +114,7 @@ def main(submission):
             print("nothing to do here")
     else:
         print("not a crosspost")
-        new_comment = submission.reply("You can now vote how pleb this post is. The pleb scale goes from 1 to 10 (no decimals!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery "
+        new_comment = submission.reply("You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery "
                                        "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**"
                                        "\n\nIf you try to vote on the post instead of this comment you have a smol pp")
         writeHistoryFile(submission.id, new_comment.id, "")
