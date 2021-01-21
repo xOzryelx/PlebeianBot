@@ -4,7 +4,6 @@ import json
 reddit = praw.Reddit("PlebeianBot")
 
 
-
 def writeVotes(postId, authorId, vote):
     with open('VoteHistory.json', 'r+', newline='') as voteFile:
         votings = {}

@@ -107,7 +107,7 @@ def main(submission):
         getImageUrlsFromPost(submission)
         imgur_post_url = uploadToImgur(submission)
         if imgur_post_url:
-            #print(REPLY_TEMPLATE.format(imgur_post_url))
+            # print(REPLY_TEMPLATE.format(imgur_post_url))
             new_comment = submission.reply(REPLY_TEMPLATE.format(imgur_post_url))
             writeHistoryFile(submission.id, new_comment.id, imgur_post_url)
         else:
