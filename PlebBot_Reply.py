@@ -1,5 +1,7 @@
 import praw
 import json
+import re
+import ast
 
 reddit = praw.Reddit("PlebeianBot")
 
@@ -32,29 +34,8 @@ def writeVotes(postId, authorId, vote):
 
 
 def plebVote(message):
-    vote = -1
-    if "pleb vote 10" in message.body.lower():
-        vote = 10
-    elif "pleb vote 0" in message.body.lower():
-        vote = 0
-    elif "pleb vote 1" in message.body.lower():
-        vote = 1
-    elif "pleb vote 2" in message.body.lower():
-        vote = 2
-    elif "pleb vote 3" in message.body.lower():
-        vote = 3
-    elif "pleb vote 4" in message.body.lower():
-        vote = 4
-    elif "pleb vote 5" in message.body.lower():
-        vote = 5
-    elif "pleb vote 6" in message.body.lower():
-        vote = 6
-    elif "pleb vote 7" in message.body.lower():
-        vote = 7
-    elif "pleb vote 8" in message.body.lower():
-        vote = 8
-    elif "pleb vote 9" in message.body.lower():
-        vote = 9
+    vote_string = re.search("(pleb vote )(\d{1,2}\.\d{1})", message.body.lower()).group().replace("pleb vote ", '')
+    vote = ast.literal_eval(vote_string)
 
     fraud = writeVotes(message.submission.id, message.author.id, vote)
     if fraud == 1 and 0 <= vote < 11:
@@ -109,6 +90,7 @@ def main():
                     else:
                         message.reply("u/xOzryelx is my daddy")
                         message.mark_read()
+
                 elif "PlebeianBot" in message.body.lower():
                     message.reply("You called master\n\nWhat can I do for you today?")
                     message.mark_read()
