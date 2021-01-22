@@ -27,18 +27,18 @@ def clear_backlog():
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
-                print("can't read file content")
+                print("Empty file or can't read file content")
                 return 0
 
             for submission in subreddit.new():
                 if submission.id not in commentHistory.keys():
-                    print("found post I heven't done")
+                    print("found post I haven't done")
                     main(submission)
                 else:
                     return 0
 
     except Exception as e:
-        print("no backlog file")
+        print("no history file")
         return 0
 
 
@@ -128,7 +128,7 @@ def main(submission):
         getImageUrlsFromPost(submission)
         imgur_post_url = uploadToImgur(submission)
         if imgur_post_url:
-            new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url)+REPLY_TEMPLATE)
+            new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
             writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
         else:
             print("nothing to do here")

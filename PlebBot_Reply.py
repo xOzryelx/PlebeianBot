@@ -35,33 +35,34 @@ def writeVotes(postId, authorId, vote):
 
 def plebVote(message):
     vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
-    try:
-        vote = ast.literal_eval(vote_string)
-        vote = round(vote, 1)
+    if vote_string:
+        try:
+            vote = ast.literal_eval(vote_string)
+            vote = round(vote, 1)
 
-    except Exception as e:
-        print(e)
-        print("Couldn't convert to numeric")
-        message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
-        message.mark_read()
-        print("Assistance needed")
-        return 0
-
-    if 0 <= vote <= 10.9:
-        if writeVotes(message.submission.id, message.author.id, vote):
-            message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
+        except Exception as e:
+            print(e)
+            print("Couldn't convert to numeric")
+            message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
             message.mark_read()
-            print("Voter fraud")
+            print("Assistance needed")
+            return 0
 
-        else:
-            message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
+        if 0 <= vote <= 10.9:
+            if writeVotes(message.submission.id, message.author.id, vote):
+                message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
+                message.mark_read()
+                print("Voter fraud")
+
+            else:
+                message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
+                message.mark_read()
+                print("Vote registered")
+
+        elif vote < 1 or vote >= 10.9:
+            message.reply("Did you not understand how to vote?")
             message.mark_read()
-            print("Vote registered")
-
-    elif vote < 1 or vote >= 10.9:
-        message.reply("Did you not understand how to vote?")
-        message.mark_read()
-        print("to dumb to vote")
+            print("to dumb to vote")
 
     else:
         message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
