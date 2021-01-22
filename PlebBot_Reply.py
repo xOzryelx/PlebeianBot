@@ -2,6 +2,7 @@ import praw
 import json
 import re
 import ast
+from decimal import Decimal, ROUND_HALF_UP
 
 reddit = praw.Reddit("PlebeianBot")
 
@@ -34,9 +35,12 @@ def writeVotes(postId, authorId, vote):
 
 
 def plebVote(message):
-    vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1})?|)", message.body.lower()).group().replace("pleb vote ", '')
+    vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
     try:
         vote = ast.literal_eval(vote_string)
+        if type(vote) == float:
+            vote = Decimal(vote)
+            vote = round(vote, 1)
         fraud = writeVotes(message.submission.id, message.author.id, vote)
     except Exception as e:
         print(e)
