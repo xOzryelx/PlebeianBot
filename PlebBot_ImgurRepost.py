@@ -28,15 +28,18 @@ def get_imgur_session():
     try:
         with open('imgur_creds.json', 'r', newline='') as credFile:
             try:
+                global creds
                 creds = json.load(credFile)
                 if not creds:
                     logging.error("Empty file or can't read file content")
                     return 0
             except Exception as e:
+                logging.error(e)
                 logging.error("Empty file or can't read file content")
                 return 0
 
     except Exception as e:
+        logging.error(e)
         logging.error("Can't open imgur_creds.json")
 
     imgur_client.client_secret = creds["client_secret"]
@@ -45,25 +48,27 @@ def get_imgur_session():
 
 # find all passed submissions that haven't been processed
 def clear_backlog():
+    global submission
     logging.info("clearing backlog")
     try:
         with open('BotCommentHistory.json', 'r', newline='') as historyFile:
-            commentHistory = {}
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
+                logging.error(e)
                 logging.error("Empty file or can't read file content")
                 return 0
 
             for submission in subreddit.new():
                 if submission.id not in commentHistory.keys():
                     logging.info("found post I haven't done")
-                    main(submission)
+                    main()
                 else:
                     return 0
 
     except Exception as e:
-        logging.warning("no history file")
+        logging.error(e)
+        logging.warning("no history file ")
         return 0
 
 
@@ -75,10 +80,12 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
+                logging.error(e)
                 logging.error("can't read file content")
             historyFile.close()
 
     except Exception as e:
+        logging.error(e)
         logging.info("guess the file doesn't exist yet")
         open('BotCommentHistory.json', 'a').close()
 
@@ -106,7 +113,8 @@ def getImgurImageUrls(imgurURL):
 
 
 # get urls of images in submission for uploading to imgur
-def getImageUrlsFromPost(submission):
+def getImageUrlsFromPost():
+    global submission
     if "https://www.reddit.com/gallery/" in submission.url:
         for image in submission.crosspost_parent_list[0]['media_metadata']:
             image_urls.append(submission.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
@@ -123,7 +131,8 @@ def getImageUrlsFromPost(submission):
 
 
 # upload found images to imgur by url
-def uploadToImgur(submission):
+def uploadToImgur():
+    global submission
     for url in image_urls:
         try:
             imgur_post = imgur_client.upload_image(title=submission.title, image=url)
@@ -145,7 +154,8 @@ def uploadToImgur(submission):
     return imgur_post_url
 
 
-def main(submission):
+def main():
+    global submission
     logging.info(submission.title)
 
     try:
@@ -156,8 +166,8 @@ def main(submission):
         return 0
 
     if hasattr(submission, "crosspost_parent"):
-        getImageUrlsFromPost(submission)
-        imgur_post_url = uploadToImgur(submission)
+        getImageUrlsFromPost()
+        imgur_post_url = uploadToImgur()
         if imgur_post_url:
             new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
             writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
@@ -179,4 +189,4 @@ if __name__ == "__main__":
     logging.info("done with backlog")
     for submission in subreddit.stream.submissions(skip_existing=True):
         logging.info("detected new post")
-        main(submission)
+        main()

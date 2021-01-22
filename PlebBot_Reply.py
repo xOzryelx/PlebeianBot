@@ -45,7 +45,7 @@ def plebVote(message):
     vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
     if vote_string:
         try:
-            # cpnvert chars to bool and round to one decimal
+            # convert chars to bool and round to one decimal
             vote = ast.literal_eval(vote_string)
             vote = round(vote, 1)
 
