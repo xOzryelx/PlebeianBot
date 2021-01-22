@@ -1,6 +1,9 @@
 import praw
 import pyimgur
 import json
+import logging
+
+logging.basicConfig(filename='PlebBot_RepostImgur.log', level=logging.INFO)
 
 IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
 REPLY_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
@@ -20,25 +23,25 @@ imgur_client.exchange_pin(pin)
 
 
 def clear_backlog():
-    print("clearing backlog")
+    logging.info("clearing backlog")
     try:
         with open('BotCommentHistory.json', 'r', newline='') as historyFile:
             commentHistory = {}
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
-                print("Empty file or can't read file content")
+                logging.error("Empty file or can't read file content")
                 return 0
 
             for submission in subreddit.new():
                 if submission.id not in commentHistory.keys():
-                    print("found post I haven't done")
+                    logging.info("found post I haven't done")
                     main(submission)
                 else:
                     return 0
 
     except Exception as e:
-        print("no history file")
+        logging.warning("no history file")
         return 0
 
 
@@ -49,11 +52,11 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
-                print("can't read file content")
+                logging.error("can't read file content")
             historyFile.close()
 
     except Exception as e:
-        print("guess the file doesn't exist yet")
+        logging.info("guess the file doesn't exist yet")
         open('BotCommentHistory.json', 'a').close()
 
     with open('BotCommentHistory.json', 'w+', newline='') as historyFile:
@@ -99,7 +102,8 @@ def uploadToImgur(submission):
         try:
             imgur_post = imgur_client.upload_image(title=submission.title, image=url)
         except Exception as e:
-            print(e)
+            logging.error("Can't upload to imgur")
+            logging.error(e)
             continue
         imgur_ids.append(imgur_post.id)
 
@@ -109,19 +113,20 @@ def uploadToImgur(submission):
     elif len(imgur_ids) == 1:
         imgur_post_url = imgur_client.get_image(imgur_ids[0]).link
     else:
-        print("empty posts url")
+        logging.info("empty posts url")
         return 0
 
     return imgur_post_url
 
 
 def main(submission):
-    print(submission.title)
+    logging.info(submission.title)
 
     try:
         imgur_client.refresh_access_token()
     except Exception as e:
-        print(e)
+        logging.error("Can't refresh imgur token")
+        logging.error(e)
         return 0
 
     if hasattr(submission, "crosspost_parent"):
@@ -131,20 +136,20 @@ def main(submission):
             new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
             writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
         else:
-            print("nothing to do here")
+            logging.info("nothing to do here")
     else:
-        print("not a crosspost")
+        logging.info("not a crosspost")
         new_comment = submission.reply(REPLY_TEMPLATE)
         writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
     image_urls.clear()
     imgur_ids.clear()
-    print('done')
+    logging.info('done')
     return 0
 
 
 if __name__ == "__main__":
     clear_backlog()
-    print("done with backlog")
+    logging.info("done with backlog")
     for submission in subreddit.stream.submissions(skip_existing=True):
-        print("detected new post")
+        logging.info("detected new post")
         main(submission)
