@@ -50,7 +50,7 @@ def plebVote(message):
         print("Assistance needed")
         return 0
 
-    if fraud == 1 and 0 <= vote < 11:
+    if fraud == 1 and 0 <= vote <= 10.9:
         message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
         message.mark_read()
         print("Vote registered")
@@ -60,7 +60,7 @@ def plebVote(message):
         message.mark_read()
         print("Voter fraud")
 
-    elif vote < 1 or vote >= 11:
+    elif vote < 1 or vote >= 10.9:
         message.reply("Did you not understand how to vote?")
         message.mark_read()
         print("to dumb to vote")
