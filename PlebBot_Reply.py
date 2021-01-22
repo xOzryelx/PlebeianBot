@@ -49,7 +49,7 @@ def plebVote(message):
         message.mark_read()
         print("Voter fraud")
 
-    elif vote == -1:
+    elif vote < 0 or vote >= 11:
         message.reply("Did you not understand how to vote?")
         message.mark_read()
         print("to dumb to vote")
