@@ -15,7 +15,7 @@ password=<bots password>
 To get client_id and client_secret go to https://www.reddit.com/prefs/apps and register an app to the account  
   
 
-For pyimgur you need a imgur creds.json that contains  
+For pyimgur you need a imgur_creds.json that contains  
 {  
   "client_secret": "<client_secret>",  
   "refresh_token": "<refresh_token>"  
