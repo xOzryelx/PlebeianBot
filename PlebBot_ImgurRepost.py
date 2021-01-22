@@ -3,25 +3,47 @@ import pyimgur
 import json
 import logging
 
-logging.basicConfig(filename='PlebBot_RepostImgur.log', level=logging.INFO)
+# setting logging format
+logging.basicConfig(filename='PlebBot_RepostImgur.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
+# setting predefined replies
 IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
 REPLY_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
                  "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
                  "\n\nIf you try to vote on the post instead of this comment you have a smol pp\n\nBeep boop, I'm a bot. Currently only testing, so don't startle me"
+
+# some global variables for later
 imgur_ids = []
 image_urls = []
+creds = {}
 
+# init for reddit and imgur API
 reddit = praw.Reddit("PlebeianBot")
-
 subreddit = reddit.subreddit("PlebeianAR")
-imgur_client = pyimgur.Imgur("4aa90a17cd35be9", "de4bec6156652f3a0107dd030e2eb67026cbf7e3")
-auth_url = imgur_client.authorization_url('pin')
-print(auth_url)
-pin = input("What is the pin? ")
-imgur_client.exchange_pin(pin)
+imgur_client = pyimgur.Imgur(client_id="4aa90a17cd35be9")
 
 
+# get auth info for imgur_client from config file
+def get_imgur_session():
+    try:
+        with open('imgur_creds.json', 'r', newline='') as credFile:
+            try:
+                creds = json.load(credFile)
+                if not creds:
+                    logging.error("Empty file or can't read file content")
+                    return 0
+            except Exception as e:
+                logging.error("Empty file or can't read file content")
+                return 0
+
+    except Exception as e:
+        logging.error("Can't open imgur_creds.json")
+
+    imgur_client.client_secret = creds["client_secret"]
+    imgur_client.refresh_token = creds["refresh_token"]
+
+
+# find all passed submissions that haven't been processed
 def clear_backlog():
     logging.info("clearing backlog")
     try:
@@ -45,6 +67,7 @@ def clear_backlog():
         return 0
 
 
+# save processed submissions info in a json
 def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
     commentHistory = {}
     try:
@@ -69,6 +92,7 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
     return 0
 
 
+# get images from a imgur submission
 def getImgurImageUrls(imgurURL):
     imgurObject = imgur_client.get_at_url(imgurURL)
     if type(imgurObject) == pyimgur.Gallery_image:
@@ -81,6 +105,7 @@ def getImgurImageUrls(imgurURL):
     return 1
 
 
+# get urls of images in submission for uploading to imgur
 def getImageUrlsFromPost(submission):
     if "https://www.reddit.com/gallery/" in submission.url:
         for image in submission.crosspost_parent_list[0]['media_metadata']:
@@ -97,6 +122,7 @@ def getImageUrlsFromPost(submission):
     return 0
 
 
+# upload found images to imgur by url
 def uploadToImgur(submission):
     for url in image_urls:
         try:
@@ -148,6 +174,7 @@ def main(submission):
 
 
 if __name__ == "__main__":
+    get_imgur_session()
     clear_backlog()
     logging.info("done with backlog")
     for submission in subreddit.stream.submissions(skip_existing=True):
