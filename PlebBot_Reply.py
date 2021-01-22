@@ -4,11 +4,14 @@ import re
 import ast
 import logging
 
+# setting logging format
 logging.basicConfig(filename='PlebBot_reply.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
+# init for reddit API
 reddit = praw.Reddit("PlebeianBot")
 
 
+# save processed votes into json, returns 1 if user had already voted for a submission, returns 0 otherwise
 def writeVotes(postId, authorId, vote):
     with open('VoteHistory.json', 'r+', newline='') as voteFile:
         votings = {}
@@ -36,10 +39,13 @@ def writeVotes(postId, authorId, vote):
     return 0
 
 
+# process a vote attempt from a user
 def plebVote(message):
+    # regex to get the numeric chars in the vote comment
     vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
     if vote_string:
         try:
+            # cpnvert chars to bool and round to one decimal
             vote = ast.literal_eval(vote_string)
             vote = round(vote, 1)
 
@@ -51,6 +57,7 @@ def plebVote(message):
             logging.error("Assistance needed")
             return 0
 
+        # check if vote is on the pleb scale
         if 0 <= vote <= 10.9:
             if writeVotes(message.submission.id, message.author.id, vote):
                 message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
@@ -77,10 +84,12 @@ def plebVote(message):
 
 def main():
     logging.info("here we go")
+    # wait for new message
     for message in reddit.inbox.stream():
         logging.info("found new message")
         if message.new:
             if message.subreddit.display_name == "PlebeianAR":
+                # precess what the message says
                 if "pleb vote" in message.body.lower():
                     plebVote(message)
 
@@ -109,7 +118,7 @@ def main():
                     message.mark_read()
 
                 else:
-                    logging.warning("someone did something stupid again")
+                    logging.warning("someone did something stupid again on post %s with comment %s from %s", message.submission.id, message.id, message.author.name)
 
             else:
                 message.reply("who dares to call me outside of my dungeon?")
