@@ -15,7 +15,7 @@ def writeVotes(postId, authorId, vote):
             if postId in votings.keys():
                 for registeredVote in votings[postId]:
                     if list(registeredVote.keys())[0] == authorId:
-                        return 2
+                        return 1
 
                 votings[postId].append({authorId: vote})
             else:
@@ -31,17 +31,15 @@ def writeVotes(postId, authorId, vote):
 
     voteFile.close()
 
-    return 1
+    return 0
 
 
 def plebVote(message):
     vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
     try:
         vote = ast.literal_eval(vote_string)
-        if type(vote) == float:
-            vote = Decimal(vote)
-            vote = round(vote, 1)
-        fraud = writeVotes(message.submission.id, message.author.id, vote)
+        vote = round(vote, 1)
+
     except Exception as e:
         print(e)
         print("Couldn't convert to numeric")
@@ -50,15 +48,16 @@ def plebVote(message):
         print("Assistance needed")
         return 0
 
-    if fraud == 1 and 0 <= vote <= 10.9:
-        message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
-        message.mark_read()
-        print("Vote registered")
+    if 0 <= vote <= 10.9:
+        if writeVotes(message.submission.id, message.author.id, vote):
+            message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
+            message.mark_read()
+            print("Voter fraud")
 
-    elif fraud == 2:
-        message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
-        message.mark_read()
-        print("Voter fraud")
+        else:
+            message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
+            message.mark_read()
+            print("Vote registered")
 
     elif vote < 1 or vote >= 10.9:
         message.reply("Did you not understand how to vote?")
