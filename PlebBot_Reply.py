@@ -35,11 +35,18 @@ def writeVotes(postId, authorId, vote):
 
 def plebVote(message):
     vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1})?|)", message.body.lower()).group().replace("pleb vote ", '')
-    vote = ast.literal_eval(vote_string)
+    try:
+        vote = ast.literal_eval(vote_string)
+        fraud = writeVotes(message.submission.id, message.author.id, vote)
+    except Exception as e:
+        print(e)
+        print("Couldn't convert to numeric")
+        message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
+        message.mark_read()
+        print("Assistance needed")
+        return 0
 
-    fraud = writeVotes(message.submission.id, message.author.id, vote)
     if fraud == 1 and 0 <= vote < 11:
-
         message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
         message.mark_read()
         print("Vote registered")
@@ -49,7 +56,7 @@ def plebVote(message):
         message.mark_read()
         print("Voter fraud")
 
-    elif vote < 0 or vote >= 11:
+    elif vote < 1 or vote >= 11:
         message.reply("Did you not understand how to vote?")
         message.mark_read()
         print("to dumb to vote")
