@@ -1,10 +1,9 @@
 import praw
 import pyimgur
-import csv
-from datetime import datetime
+import json
 
-REPLY_TEMPLATE = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n" \
-                 "You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
+IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
+REPLY_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
                  "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
                  "\n\nIf you try to vote on the post instead of this comment you have a smol pp\n\nBeep boop, I'm a bot. Currently only testing, so don't startle me"
 imgur_ids = []
@@ -22,27 +21,49 @@ imgur_client.exchange_pin(pin)
 
 def clear_backlog():
     print("clearing backlog")
-    with open('BotCommentHistory.csv', 'r', newline='') as historyFile:
-        history_reader = list(csv.reader(historyFile, delimiter=';', quotechar='"'))
-        last_done = history_reader[-1]
-        time, reddit_post_id, *rest = last_done
-        if time != "timestamp":
-            if time < datetime.now().isoformat():
-                for submission in subreddit.new():
-                    if submission.id != reddit_post_id:
-                        print("found post that I haven't done")
-                        main(submission)
-                    else:
-                        return 0
-        else:
-            return 0
+    try:
+        with open('BotCommentHistory.json', 'r', newline='') as historyFile:
+            commentHistory = {}
+            try:
+                commentHistory = json.load(historyFile)
+            except Exception as e:
+                print("can't read file content")
+                return 0
+
+            for submission in subreddit.new():
+                if submission.id not in commentHistory.keys():
+                    print("found post I heven't done")
+                    main(submission)
+                else:
+                    return 0
+
+    except Exception as e:
+        print("no backlog file")
+        return 0
 
 
-def writeHistoryFile(reddit_post_id, reddit_comment_id, imgur_post_id):
-    with open('BotCommentHistory.csv', 'a', newline='') as historyFile:
-        history_writer = csv.writer(historyFile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        history_writer.writerow([datetime.now().isoformat(), reddit_post_id, reddit_comment_id, imgur_post_id])
+def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
+    commentHistory = {}
+    try:
+        with open('BotCommentHistory.json', 'r', newline='') as historyFile:
+            try:
+                commentHistory = json.load(historyFile)
+            except Exception as e:
+                print("can't read file content")
+            historyFile.close()
+
+    except Exception as e:
+        print("guess the file doesn't exist yet")
+        open('BotCommentHistory.json', 'a').close()
+
+    with open('BotCommentHistory.json', 'w+', newline='') as historyFile:
+        if post_id not in commentHistory.keys():
+            commentHistory[post_id] = {'post_timestamp': post_creation, 'comment_id': comment_id, 'imgur_post_id': imgur_post_id, 'evaluated': 0}
+            historyFile.truncate(0)
+            historyFile.seek(0)
+            json.dump(commentHistory, historyFile)
     historyFile.close()
+    return 0
 
 
 def getImgurImageUrls(imgurURL):
@@ -107,17 +128,14 @@ def main(submission):
         getImageUrlsFromPost(submission)
         imgur_post_url = uploadToImgur(submission)
         if imgur_post_url:
-            # print(REPLY_TEMPLATE.format(imgur_post_url))
-            new_comment = submission.reply(REPLY_TEMPLATE.format(imgur_post_url))
-            writeHistoryFile(submission.id, new_comment.id, imgur_post_url)
+            new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url)+REPLY_TEMPLATE)
+            writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
         else:
             print("nothing to do here")
     else:
         print("not a crosspost")
-        new_comment = submission.reply("You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery "
-                                       "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**"
-                                       "\n\nIf you try to vote on the post instead of this comment you have a smol pp")
-        writeHistoryFile(submission.id, new_comment.id, "")
+        new_comment = submission.reply(REPLY_TEMPLATE)
+        writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
     image_urls.clear()
     imgur_ids.clear()
     print('done')

@@ -2,7 +2,6 @@ import praw
 import json
 import re
 import ast
-from decimal import Decimal, ROUND_HALF_UP
 
 reddit = praw.Reddit("PlebeianBot")
 
