@@ -2,6 +2,9 @@ import praw
 import json
 import re
 import ast
+import logging
+
+logging.basicConfig(filename='PlebBot_reply.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 reddit = praw.Reddit("PlebeianBot")
 
@@ -21,7 +24,7 @@ def writeVotes(postId, authorId, vote):
                 votings[postId] = [{authorId: vote}]
 
         except Exception as e:
-            print(e)
+            logging.warning(e)
             votings[postId] = [{authorId: vote}]
 
         voteFile.truncate(0)
@@ -41,59 +44,59 @@ def plebVote(message):
             vote = round(vote, 1)
 
         except Exception as e:
-            print(e)
-            print("Couldn't convert to numeric")
+            logging.error(e)
+            logging.error("Couldn't convert to numeric")
             message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
             message.mark_read()
-            print("Assistance needed")
+            logging.error("Assistance needed")
             return 0
 
         if 0 <= vote <= 10.9:
             if writeVotes(message.submission.id, message.author.id, vote):
                 message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
                 message.mark_read()
-                print("Voter fraud")
+                logging.warning("Voter fraud")
 
             else:
                 message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
                 message.mark_read()
-                print("Vote registered")
+                logging.info("Vote registered")
 
         elif vote < 1 or vote >= 10.9:
             message.reply("Did you not understand how to vote?")
             message.mark_read()
-            print("to dumb to vote")
+            logging.info("to dumb to vote")
 
     else:
-        message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
+        message.reply("Come quick daddy u/xOzryelx \n\nSomeone did something stupid again")
         message.mark_read()
-        print("Assistance needed")
+        logging.warning("Assistance needed")
 
     return 1
 
 
 def main():
-    print("here we go")
+    logging.info("here we go")
     for message in reddit.inbox.stream():
-        print("waiting on new message")
+        logging.info("found new message")
         if message.new:
             if message.subreddit.display_name == "PlebeianAR":
                 if "pleb vote" in message.body.lower():
                     plebVote(message)
 
                 elif "good bot" in message.body.lower():
-                    print("good bot")
+                    logging.info("good bot")
                     message.upvote()
                     message.reply("Thanks for voting\n\nFeature requests welcome")
                     message.mark_read()
 
                 elif "bad bot" in message.body.lower():
-                    print("bad bot")
+                    logging.info("bad bot")
                     message.reply("Sorry if you don't like me. Please let me know how I can improve")
                     message.mark_read()
 
                 elif "who's your daddy" in message.body.lower():
-                    print("daddy?")
+                    logging.info("daddy?")
                     if message.author.name == "xOzryelx":
                         message.reply("You are my daddy")
                         message.mark_read()
@@ -106,12 +109,12 @@ def main():
                     message.mark_read()
 
                 else:
-                    print("someone did something stupid again")
+                    logging.warning("someone did something stupid again")
 
             else:
                 message.reply("who dares to call me outside of my dungeon?")
 
-        print("done")
+        logging.info("done")
 
 
 if __name__ == "__main__":
