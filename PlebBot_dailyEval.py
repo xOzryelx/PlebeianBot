@@ -16,6 +16,7 @@ reddit = praw.Reddit("PlebeianBot")
 EVAL_TEMPLATE = "After 24 hours your post got a PlebScore of {} with {} votes. This averages to {} per vote. You can still vote for this post for the monthly rankings!"
 
 
+# write given data to given file
 def writeFile(filename, data):
     logging.info("opening file {} for writing".format(filename))
     try:
@@ -35,6 +36,7 @@ def writeFile(filename, data):
         return 0
 
 
+# read given file
 def readFile(filename):
     logging.info("opening file {} for reading".format(filename))
     try:
@@ -54,6 +56,7 @@ def readFile(filename):
         return 0
 
 
+# mark post as evaluated in BotCommentHistory.json
 def markEvaluated(post):
     logging.info("marking post as evaluated")
     commentHistory = readFile("history/BotCommentHistory.json")
@@ -66,6 +69,7 @@ def markEvaluated(post):
     return 0
 
 
+# read the votes and calc the score
 def readVotes(post):
     plebScore = 0
     logging.info("reading votes for given post")
@@ -84,7 +88,8 @@ def readVotes(post):
         return 0
 
 
-def searchPost():
+# find post that the bot has commented on that are older than 24h and haven't been evaluated
+def main():
     logging.info("searching post to evaluate")
     commentHistory = readFile("history/BotCommentHistory.json")
 
@@ -98,10 +103,6 @@ def searchPost():
                     markEvaluated(post)
             else:
                 logging.info("not in time range")
-
-
-def main():
-    searchPost()
     return 0
 
 
