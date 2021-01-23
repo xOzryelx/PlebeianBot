@@ -4,6 +4,8 @@ import re
 import ast
 import logging
 
+# build 23.01.21-1
+
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_reply.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
 
