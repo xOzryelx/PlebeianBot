@@ -5,7 +5,7 @@ import ast
 import logging
 
 # setting logging format
-logging.basicConfig(filename='PlebBot_reply.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_reply.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
@@ -65,7 +65,7 @@ def plebVote(message):
                 logging.warning("Voter fraud")
 
             else:
-                message.reply("Vote registered as a " + str(vote) + "/10 on the pleb scale")
+                message.reply("Vote registered as a " + str(vote) + "/10(.9) on the pleb scale")
                 message.mark_read()
                 logging.info("Vote registered")
 

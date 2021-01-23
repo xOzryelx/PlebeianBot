@@ -4,7 +4,7 @@ import json
 import logging
 
 # setting logging format
-logging.basicConfig(filename='PlebBot_RepostImgur.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_RepostImgur.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # setting predefined replies
 IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
