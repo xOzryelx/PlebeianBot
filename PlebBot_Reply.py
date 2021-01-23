@@ -7,7 +7,7 @@ import logging
 # build 23.01.21-1
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_reply.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_reply.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
