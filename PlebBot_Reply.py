@@ -13,7 +13,7 @@ reddit = praw.Reddit("PlebeianBot")
 
 # save processed votes into json, returns 1 if user had already voted for a submission, returns 0 otherwise
 def writeVotes(postId, authorId, vote):
-    with open('VoteHistory.json', 'r+', newline='') as voteFile:
+    with open('history/VoteHistory.json', 'r+', newline='') as voteFile:
         votings = {}
         try:
             votings = json.load(voteFile)

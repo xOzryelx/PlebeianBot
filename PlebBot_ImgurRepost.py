@@ -51,7 +51,7 @@ def clear_backlog():
     global submission
     logging.info("clearing backlog")
     try:
-        with open('BotCommentHistory.json', 'r', newline='') as historyFile:
+        with open('history/BotCommentHistory.json', 'r', newline='') as historyFile:
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
@@ -76,7 +76,7 @@ def clear_backlog():
 def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
     commentHistory = {}
     try:
-        with open('BotCommentHistory.json', 'r', newline='') as historyFile:
+        with open('history/BotCommentHistory.json', 'r', newline='') as historyFile:
             try:
                 commentHistory = json.load(historyFile)
             except Exception as e:
@@ -87,9 +87,9 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
     except Exception as e:
         logging.error(e)
         logging.info("guess the file doesn't exist yet")
-        open('BotCommentHistory.json', 'a').close()
+        open('history/BotCommentHistory.json', 'a').close()
 
-    with open('BotCommentHistory.json', 'w+', newline='') as historyFile:
+    with open('history/BotCommentHistory.json', 'w+', newline='') as historyFile:
         if post_id not in commentHistory.keys():
             commentHistory[post_id] = {'post_timestamp': post_creation, 'comment_id': comment_id, 'imgur_post_id': imgur_post_id, 'evaluated': 0}
             historyFile.truncate(0)
