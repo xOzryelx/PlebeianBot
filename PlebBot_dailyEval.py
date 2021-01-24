@@ -2,10 +2,10 @@ import json
 from datetime import timezone
 import datetime
 import praw
+from praw.exceptions import APIException
 import logging
-import time
 
-# build 23.01.21-1
+# build 24.01.21-1
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -99,7 +99,11 @@ def main():
             if (utc_time - 87000) < commentHistory[post]["post_timestamp"] < (utc_time - 86400):
                 evalVotes = readVotes(post)
                 if evalVotes:
-                    reddit.submission(post).reply(evalVotes)
+                    try:
+                        reddit.submission(post).reply(evalVotes)
+                    except APIException as e:
+                        logging.error("unable to reply")
+                        logging.error(e)
                     markEvaluated(post)
             else:
                 logging.info("not in time range")

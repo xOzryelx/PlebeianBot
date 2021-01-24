@@ -1,18 +1,19 @@
 import praw
+from praw.exceptions import APIException
 import pyimgur
 import json
 import logging
 
-# build 23.01.21-1
+# build 24.01.21-1
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_RepostImgur.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # setting predefined replies
 IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
-REPLY_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 1.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
+REPLY_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 0.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
                  "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
-                 "\n\nIf you try to vote on the post instead of this comment you have a smol pp\n\nBeep boop, I'm a bot. Currently only testing, so don't startle me"
+                 "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. Currently only testing, so don't startle me.)"
 
 # some global variables for later
 imgur_ids = []
@@ -35,13 +36,13 @@ def get_imgur_session():
                 if not creds:
                     logging.error("Empty file or can't read file content")
                     return 0
-            except Exception as e:
-                logging.error(e)
+            except Exception as exception:
+                logging.error(exception)
                 logging.error("Empty file or can't read file content")
                 return 0
 
-    except Exception as e:
-        logging.error(e)
+    except Exception as exception:
+        logging.error(exception)
         logging.error("Can't open imgur_creds.json")
 
     imgur_client.client_secret = creds["client_secret"]
@@ -56,8 +57,8 @@ def clear_backlog():
         with open('history/BotCommentHistory.json', 'r', newline='') as historyFile:
             try:
                 commentHistory = json.load(historyFile)
-            except Exception as e:
-                logging.error(e)
+            except Exception as exception:
+                logging.error(exception)
                 logging.error("Empty file or can't read file content")
                 return 0
 
@@ -68,8 +69,8 @@ def clear_backlog():
                 else:
                     return 0
 
-    except Exception as e:
-        logging.error(e)
+    except Exception as exception:
+        logging.error(exception)
         logging.warning("no history file ")
         return 0
 
@@ -81,13 +82,13 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
         with open('history/BotCommentHistory.json', 'r', newline='') as historyFile:
             try:
                 commentHistory = json.load(historyFile)
-            except Exception as e:
-                logging.error(e)
+            except Exception as exception:
+                logging.error(exception)
                 logging.error("can't read file content")
             historyFile.close()
 
-    except Exception as e:
-        logging.error(e)
+    except Exception as exception:
+        logging.error(exception)
         logging.info("guess the file doesn't exist yet")
         open('history/BotCommentHistory.json', 'a').close()
 
@@ -138,9 +139,9 @@ def uploadToImgur():
     for url in image_urls:
         try:
             imgur_post = imgur_client.upload_image(title=submission.title, image=url)
-        except Exception as e:
+        except Exception as exception:
             logging.error("Can't upload to imgur")
-            logging.error(e)
+            logging.error(exception)
             continue
         imgur_ids.append(imgur_post.id)
 
@@ -156,39 +157,57 @@ def uploadToImgur():
     return imgur_post_url
 
 
+# check if a submission is a crosspost, comment that people can vote
 def main():
     global submission
     logging.info(submission.title)
 
     try:
         imgur_client.refresh_access_token()
-    except Exception as e:
+    except Exception as exception:
         logging.error("Can't refresh imgur token")
-        logging.error(e)
+        logging.error(exception)
         return 0
 
     if hasattr(submission, "crosspost_parent"):
         getImageUrlsFromPost()
         imgur_post_url = uploadToImgur()
         if imgur_post_url:
-            new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
-            writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
+
+            try:
+                new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
+                writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
+            except APIException as exception:
+                logging.error("writing comment failed")
+                logging.error(exception)
+
         else:
             logging.info("nothing to do here")
     else:
         logging.info("not a crosspost")
-        new_comment = submission.reply(REPLY_TEMPLATE)
-        writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
+        try:
+            new_comment = submission.reply(REPLY_TEMPLATE)
+            writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
+        except APIException as exception:
+            logging.error("writing comment failed")
+            logging.error(exception)
+
     image_urls.clear()
     imgur_ids.clear()
     logging.info('done')
     return 0
 
 
+# wait for new submission in subreddit stream
 if __name__ == "__main__":
     get_imgur_session()
     clear_backlog()
     logging.info("done with backlog")
-    for submission in subreddit.stream.submissions(skip_existing=True):
-        logging.info("detected new post")
-        main()
+    try:
+        for submission in subreddit.stream.submissions(skip_existing=True):
+            logging.info("detected new post")
+            main()
+    except APIException as e:
+        logging.error("reading submission stream failed")
+        logging.error(e)
+        exit(1)
