@@ -1,5 +1,5 @@
 import praw
-from praw.exceptions import APIException
+from praw.exceptions import PRAWException
 import json
 import re
 import ast
@@ -58,7 +58,7 @@ def plebVote(message):
             try:
                 message.reply("Come quick daddy u/xOzryelx \n\nSomething went wrong here")
                 message.mark_read()
-            except APIException as e:
+            except PRAWException as e:
                 logging.error("unable to reply")
                 logging.error(e)
 
@@ -71,7 +71,7 @@ def plebVote(message):
                 try:
                     message.reply("Seems like you tried to vote twice... Even I have a better voting system than the US presidency")
                     message.mark_read()
-                except APIException as e:
+                except PRAWException as e:
                     logging.error("unable to reply")
                     logging.error(e)
                 logging.warning("Voter fraud")
@@ -80,7 +80,7 @@ def plebVote(message):
                 try:
                     message.reply("Vote registered as a " + str(vote) + "/10(.9) on the pleb scale")
                     message.mark_read()
-                except APIException as e:
+                except PRAWException as e:
                     logging.error("unable to reply")
                     logging.error(e)
                 logging.info("Vote registered")
@@ -89,7 +89,7 @@ def plebVote(message):
             try:
                 message.reply("Did you not understand how to vote?")
                 message.mark_read()
-            except APIException as e:
+            except PRAWException as e:
                 logging.error("unable to reply")
                 logging.error(e)
             logging.info("to dumb to vote")
@@ -98,7 +98,7 @@ def plebVote(message):
         try:
             message.reply("Come quick daddy u/xOzryelx \n\nSomeone did something stupid again")
             message.mark_read()
-        except APIException as e:
+        except PRAWException as e:
             logging.error("unable to reply")
             logging.error(e)
         logging.warning("Assistance needed")
@@ -125,7 +125,7 @@ def main():
                             message.upvote()
                             message.reply("Thanks for voting\n\nFeature requests welcome")
                             message.mark_read()
-                        except APIException as e:
+                        except PRAWException as e:
                             logging.error("unable to reply")
                             logging.error(e)
 
@@ -134,7 +134,7 @@ def main():
                         try:
                             message.reply("Sorry if you don't like me. Please let me know how I can improve")
                             message.mark_read()
-                        except APIException as e:
+                        except PRAWException as e:
                             logging.error("unable to reply")
                             logging.error(e)
 
@@ -144,14 +144,14 @@ def main():
                             try:
                                 message.reply("You are my daddy")
                                 message.mark_read()
-                            except APIException as e:
+                            except PRAWException as e:
                                 logging.error("unable to reply")
                                 logging.error(e)
                         else:
                             try:
                                 message.reply("u/xOzryelx is my daddy")
                                 message.mark_read()
-                            except APIException as e:
+                            except PRAWException as e:
                                 logging.error("unable to reply")
                                 logging.error(e)
 
@@ -159,7 +159,7 @@ def main():
                         try:
                             message.reply("You called master\n\nWhat can I do for you today?")
                             message.mark_read()
-                        except APIException as e:
+                        except PRAWException as e:
                             logging.error("unable to reply")
                             logging.error(e)
 
@@ -169,12 +169,12 @@ def main():
                 else:
                     try:
                         message.reply("who dares to call me outside of my dungeon?")
-                    except APIException as e:
+                    except PRAWException as e:
                         logging.error("unable to reply")
                         logging.error(e)
 
             logging.info("done")
-    except APIException as e:
+    except PRAWException as e:
         logging.error("unable to retrieve new messages")
         logging.error(e)
         exit(1)

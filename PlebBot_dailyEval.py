@@ -2,7 +2,7 @@ import json
 from datetime import timezone
 import datetime
 import praw
-from praw.exceptions import APIException
+from praw.exceptions import PRAWException
 import logging
 
 # build 24.01.21-1
@@ -101,7 +101,7 @@ def main():
                 if evalVotes:
                     try:
                         reddit.submission(post).reply(evalVotes)
-                    except APIException as e:
+                    except PRAWException as e:
                         logging.error("unable to reply")
                         logging.error(e)
                     markEvaluated(post)

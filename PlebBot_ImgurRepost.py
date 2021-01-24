@@ -1,5 +1,5 @@
 import praw
-from praw.exceptions import APIException
+from praw.exceptions import PRAWException
 import pyimgur
 import json
 import logging
@@ -177,7 +177,7 @@ def main():
             try:
                 new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
                 writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
-            except APIException as exception:
+            except PRAWException as exception:
                 logging.error("writing comment failed")
                 logging.error(exception)
 
@@ -188,7 +188,7 @@ def main():
         try:
             new_comment = submission.reply(REPLY_TEMPLATE)
             writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
-        except APIException as exception:
+        except PRAWException as exception:
             logging.error("writing comment failed")
             logging.error(exception)
 
@@ -209,10 +209,10 @@ if __name__ == "__main__":
             main()
             try:
                 submission.mark_visited()
-            except APIException as e:
+            except PRAWException as e:
                 logging.error("failed to mark submission as visited")
                 logging.error(e)
-    except APIException as e:
+    except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
         exit(1)
