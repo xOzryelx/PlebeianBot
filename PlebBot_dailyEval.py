@@ -4,6 +4,7 @@ import datetime
 import praw
 from praw.exceptions import PRAWException
 import logging
+import time
 
 # build 24.01.21-1
 
@@ -112,4 +113,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    while 1:
+        main()
+        time.sleep(300)
