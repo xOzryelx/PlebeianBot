@@ -8,7 +8,7 @@ import logging
 # build 24.01.21-1
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
@@ -100,11 +100,12 @@ def main():
                 evalVotes = readVotes(post)
                 if evalVotes:
                     try:
-                        reddit.submission(post).reply(evalVotes)
+                        logging.info(evalVotes)
+                        # reddit.submission(post).reply(evalVotes)
                     except PRAWException as e:
                         logging.error("unable to reply")
                         logging.error(e)
-                    markEvaluated(post)
+                    #markEvaluated(post)
             else:
                 logging.info("not in time range")
     return 0
