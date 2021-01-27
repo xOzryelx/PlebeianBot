@@ -45,7 +45,12 @@ def writeVotes(postId, authorId, vote):
 # process a vote attempt from a user
 def plebVote(message):
     # regex to get the numeric chars in the vote comment
-    vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
+    try:
+        vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
+    except Exception as e:
+        vote_string = ''
+        logging.warning(e)
+        logging.warning("Couldn't match regex to comment")
     if vote_string:
         try:
             # convert chars to bool and round to one decimal
@@ -85,7 +90,7 @@ def plebVote(message):
                     logging.error(e)
                 logging.info("Vote registered")
 
-        elif vote < 1 or vote >= 10.9:
+        elif vote < 0 or vote >= 10.9:
             try:
                 message.reply("Did you not understand how to vote?")
                 message.mark_read()
