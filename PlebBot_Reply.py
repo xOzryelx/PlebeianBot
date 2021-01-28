@@ -46,7 +46,7 @@ def writeVotes(postId, authorId, vote):
 def plebVote(message):
     # regex to get the numeric chars in the vote comment
     try:
-        vote_string = re.search("(pleb vote )(\d{1,2}(?:[.,]\d{1,10})?|)", message.body.lower()).group().replace("pleb vote ", '')
+        vote_string = re.search("(pleb vote )((\d{1,2})(([.,]|\D)\d{0,5}))", message.body.lower()).group(2).replace("pleb vote ", '')
     except Exception as e:
         vote_string = ''
         logging.warning(e)
@@ -83,6 +83,8 @@ def plebVote(message):
 
             else:
                 try:
+                    if vote == 6.9:
+                        message.reply("Vote registered as nice/10(.9) on the pleb scale")
                     message.reply("Vote registered as a " + str(vote) + "/10(.9) on the pleb scale")
                     message.mark_read()
                 except PRAWException as e:
