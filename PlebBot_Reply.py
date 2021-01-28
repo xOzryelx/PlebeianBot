@@ -5,10 +5,10 @@ import re
 import ast
 import logging
 
-# build 28.01.21-1
+# build 28.01.21-2
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_Reply.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_Reply.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
