@@ -1,13 +1,12 @@
 import json
-from datetime import timezone
 import datetime
 import praw
 from praw.exceptions import PRAWException
 import logging
-import time
 import sys
+from dateutil.relativedelta import relativedelta
 
-# build 28.01.21-1
+# build 28.01.21-2
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -16,7 +15,7 @@ logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
 
-EVAL_TEMPLATE = "After 24 hours your post got a PlebScore of {} with {} votes. This averages to {} per vote. You can still vote for this post for the monthly rankings!"
+EVAL_TEMPLATE = "After 24 hours your post got a PlebScore of {} with {} votes. This averages to {} per vote. You can still vote for this post for the monthly rankings! ^(Just to notify me if it worked u/xOzryelx)"
 
 
 # write given data to given file
@@ -98,13 +97,13 @@ def main():
 
     for post in commentHistory:
         if not commentHistory[post]["evaluated"]:
-            utc_time = datetime.datetime.now().replace(tzinfo=timezone.utc).timestamp()
-            if (utc_time - 87000) < commentHistory[post]["post_timestamp"] < (utc_time - 86400):
+            if datetime.datetime.today() + relativedelta(days=-1, minutes=-15, hours=-1) < datetime.datetime.utcfromtimestamp(commentHistory[post]["post_timestamp"]) < datetime.datetime.today() + relativedelta(days=-1, hours=-1):
                 evalVotes = readVotes(post)
                 if evalVotes:
                     try:
                         logging.info(evalVotes)
                         # reddit.submission(post).reply(evalVotes)
+                        markEvaluated(post)
                     except PRAWException as e:
                         logging.error("unable to reply")
                         logging.error(e)
@@ -115,6 +114,4 @@ def main():
 
 
 if __name__ == "__main__":
-    while 1:
-        main()
-        time.sleep(300)
+    main()
