@@ -5,7 +5,7 @@ import re
 import ast
 import logging
 
-# build 28.01.21-2
+# build 28.01.21-3
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_Reply.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -46,7 +46,7 @@ def writeVotes(postId, authorId, vote):
 def plebVote(message):
     # regex to get the numeric chars in the vote comment
     try:
-        vote_string = re.search(r"\s*(pleb vote )((\d{1,2})(([.,]|)\d{0,5}))", "pleb vote 10.9").group(2).replace("pleb vote ", '').rstrip('.')
+        vote_string = re.search(r"\s*(pleb vote )((\d{1,2})(([.,]|)\d{0,5}))", message.body.lower()).group(2).replace("pleb vote ", '').rstrip('.')
     except Exception as e:
         vote_string = ''
         logging.warning(e)
