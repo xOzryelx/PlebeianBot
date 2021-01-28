@@ -2,13 +2,16 @@ import json
 from datetime import timezone
 import datetime
 import praw
+from praw.exceptions import PRAWException
 import logging
 import time
+import sys
 
-# build 23.01.21-1
+# build 28.01.21-1
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
@@ -99,12 +102,19 @@ def main():
             if (utc_time - 87000) < commentHistory[post]["post_timestamp"] < (utc_time - 86400):
                 evalVotes = readVotes(post)
                 if evalVotes:
-                    reddit.submission(post).reply(evalVotes)
-                    markEvaluated(post)
+                    try:
+                        logging.info(evalVotes)
+                        # reddit.submission(post).reply(evalVotes)
+                    except PRAWException as e:
+                        logging.error("unable to reply")
+                        logging.error(e)
+                    # markEvaluated(post)
             else:
                 logging.info("not in time range")
     return 0
 
 
 if __name__ == "__main__":
-    main()
+    while 1:
+        main()
+        time.sleep(300)
