@@ -4,7 +4,7 @@ import pyimgur
 import json
 import logging
 
-# build 24.01.21-1
+# build 28.01.21-1
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_RepostImgur.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
