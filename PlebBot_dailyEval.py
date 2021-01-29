@@ -79,7 +79,7 @@ def readVotes(post):
         for vote in voteHistory[post]:
             plebScore += list(vote.values())[0]
 
-        voteCount = len(voteHistory[post])
+        voteCount = round(len(voteHistory[post]), 2)
         averageScore = round(plebScore / voteCount, 2)
 
         if voteCount > 0:
