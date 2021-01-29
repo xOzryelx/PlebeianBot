@@ -136,6 +136,13 @@ def getImageUrlsFromPost():
 # upload found images to imgur by url
 def uploadToImgur():
     global submission
+    try:
+        imgur_client.refresh_access_token()
+    except Exception as exception:
+        logging.error("Can't refresh imgur token")
+        logging.error(exception)
+        return None
+
     for url in image_urls:
         try:
             imgur_post = imgur_client.upload_image(title=submission.title, image=url)
@@ -161,13 +168,6 @@ def uploadToImgur():
 def main():
     global submission
     logging.info(submission.title)
-
-    try:
-        imgur_client.refresh_access_token()
-    except Exception as exception:
-        logging.error("Can't refresh imgur token")
-        logging.error(exception)
-        return 0
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         getImageUrlsFromPost()
