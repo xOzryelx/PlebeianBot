@@ -207,11 +207,6 @@ if __name__ == "__main__":
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
             main()
-            try:
-                submission.mark_visited()
-            except PRAWException as e:
-                logging.error("failed to mark submission as visited")
-                logging.error(e)
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
