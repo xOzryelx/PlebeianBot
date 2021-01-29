@@ -204,7 +204,7 @@ if __name__ == "__main__":
     clear_backlog()
     logging.info("done with backlog")
     try:
-        for submission in subreddit.stream.submissions():  # skip_existing=True):
+        for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
             main()
     except PRAWException as e:
