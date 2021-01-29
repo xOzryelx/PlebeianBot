@@ -102,11 +102,12 @@ def main():
                 if evalVotes:
                     try:
                         logging.info(evalVotes)
-                        # reddit.submission(post).reply(evalVotes)
+                        reddit.submission(post).reply(evalVotes)
                         markEvaluated(post)
                     except PRAWException as e:
                         logging.error("unable to reply")
                         logging.error(e)
+    logging.info("done")
 
     return 0
 
