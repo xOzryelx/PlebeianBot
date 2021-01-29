@@ -3,7 +3,6 @@ import datetime
 import praw
 from praw.exceptions import PRAWException
 import logging
-import sys
 from dateutil.relativedelta import relativedelta
 
 # build 28.01.21-2

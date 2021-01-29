@@ -169,7 +169,7 @@ def main():
         logging.error(exception)
         return 0
 
-    if hasattr(submission, "crosspost_parent"):
+    if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         getImageUrlsFromPost()
         imgur_post_url = uploadToImgur()
         if imgur_post_url:
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     clear_backlog()
     logging.info("done with backlog")
     try:
-        for submission in subreddit.stream.submissions(skip_existing=True):
+        for submission in subreddit.stream.submissions():  # skip_existing=True):
             logging.info("detected new post")
             main()
     except PRAWException as e:
