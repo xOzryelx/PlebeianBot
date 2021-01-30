@@ -5,7 +5,7 @@ from praw.exceptions import PRAWException
 import logging
 from dateutil.relativedelta import relativedelta
 
-# build 28.01.21-2
+# build 30.01.21-1
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -14,7 +14,7 @@ logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, f
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
 
-EVAL_TEMPLATE = "After 24 hours your post got a PlebScore of {} with {} votes. This averages to {} per vote. You can still vote for this post for the monthly rankings! ^(Just to notify me if it worked u/xOzryelx)"
+EVAL_TEMPLATE = "After 24 hours your post got a PlebScore of {} with {} votes. This averages to {} per vote. You can still vote for this post for the monthly rankings!"
 
 
 # write given data to given file
