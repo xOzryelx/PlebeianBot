@@ -215,10 +215,10 @@ def main():
         logging.info("found reposts")
         repostLinkString = ""
         if len(reposts) == 1:
-            COMPLETE_REPLY += REPOST_REPLY.format(reposts[0]["perma_link"])
+            COMPLETE_REPLY += REPOST_REPLY.format("https://redd.it/" + reposts[0]["post_id"])
         elif len(reposts) > 1:
             for post in reposts:
-                repostLinkString += post["perma_link"] + ", "
+                repostLinkString += "https://redd.it/" + post["post_id"] + ", "
             COMPLETE_REPLY += REPOST_REPLY.format(repostLinkString)
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
