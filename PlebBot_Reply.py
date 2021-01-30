@@ -5,7 +5,7 @@ import re
 import ast
 import logging
 
-# build 28.01.21-3
+# build 30.01.21-1
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_Reply.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -95,7 +95,7 @@ def plebVote(message):
 
         elif vote < 0 or vote >= 10.9:
             try:
-                message.reply("Did you not understand how to vote?")
+                message.reply("Did you not understand how to vote? \n You can try again by replying to this comment. Remember: The scale goes from 0.0 to 10.9")
                 message.mark_read()
             except PRAWException as e:
                 logging.error("unable to reply")

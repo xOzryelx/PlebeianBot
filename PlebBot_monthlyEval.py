@@ -3,13 +3,14 @@ import datetime
 import praw
 from praw.exceptions import PRAWException
 import logging
+import sys
 from dateutil.relativedelta import relativedelta
 
-# build 30.01.21-1
+# build 28.01.21-2
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
-# logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+logging.basicConfig(filename='logs/PlebBot_monthlyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
@@ -79,11 +80,11 @@ def readVotes(post):
         for vote in voteHistory[post]:
             plebScore += list(vote.values())[0]
 
-        voteCount = round(len(voteHistory[post]), 2)
-        averageScore = round(plebScore / voteCount, 2)
+    voteCount = len(voteHistory[post])
+    averageScore = plebScore / voteCount
 
-        if voteCount > 0:
-            return EVAL_TEMPLATE.format(plebScore, voteCount, averageScore)
+    if voteCount > 0:
+        return EVAL_TEMPLATE.format(plebScore, voteCount, averageScore)
 
     else:
         return 0
@@ -91,25 +92,25 @@ def readVotes(post):
 
 # find post that the bot has commented on that are older than 24h and haven't been evaluated
 def main():
-    logging.info("searching post to evaluate")
+    logging.info("searching posts to evaluate")
     commentHistory = readFile("history/BotCommentHistory.json")
 
     for post in commentHistory:
-        if not commentHistory[post]["evaluated"]:
-            if datetime.datetime.today() + relativedelta(days=-1, minutes=-15, hours=-1) < datetime.datetime.utcfromtimestamp(commentHistory[post]["post_timestamp"]) < datetime.datetime.today() + relativedelta(days=-1, hours=-1):
-                evalVotes = readVotes(post)
-                if evalVotes:
-                    try:
-                        logging.info(evalVotes)
-                        reddit.submission(post).reply(evalVotes)
-                        markEvaluated(post)
-                    except PRAWException as e:
-                        logging.error("unable to reply")
-                        logging.error(e)
-    logging.info("done")
-
+        if datetime.datetime.utcfromtimestamp(commentHistory[post]["post_timestamp"]) > datetime.datetime.today() + relativedelta(months=-1):
+            evalVotes = readVotes(post)
+            if evalVotes:
+                try:
+                    logging.info(evalVotes)
+                    # reddit.submission(post).reply(evalVotes)
+                except PRAWException as e:
+                    logging.error("unable to reply")
+                    logging.error(e)
+                # markEvaluated(post)
+        else:
+            logging.info("not in time range")
     return 0
 
 
 if __name__ == "__main__":
-    main()
+    while 1:
+        main()

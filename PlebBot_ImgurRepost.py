@@ -136,6 +136,13 @@ def getImageUrlsFromPost():
 # upload found images to imgur by url
 def uploadToImgur():
     global submission
+    try:
+        imgur_client.refresh_access_token()
+    except Exception as exception:
+        logging.error("Can't refresh imgur token")
+        logging.error(exception)
+        return None
+
     for url in image_urls:
         try:
             imgur_post = imgur_client.upload_image(title=submission.title, image=url)
@@ -162,14 +169,7 @@ def main():
     global submission
     logging.info(submission.title)
 
-    try:
-        imgur_client.refresh_access_token()
-    except Exception as exception:
-        logging.error("Can't refresh imgur token")
-        logging.error(exception)
-        return 0
-
-    if hasattr(submission, "crosspost_parent"):
+    if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         getImageUrlsFromPost()
         imgur_post_url = uploadToImgur()
         if imgur_post_url:
@@ -207,11 +207,6 @@ if __name__ == "__main__":
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
             main()
-            try:
-                submission.mark_visited()
-            except PRAWException as e:
-                logging.error("failed to mark submission as visited")
-                logging.error(e)
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
