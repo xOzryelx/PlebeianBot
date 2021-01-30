@@ -210,7 +210,7 @@ def main():
     global submission
     logging.info(submission.title)
 
-    reposts = get_reposts_in_sub('l8ii5l')
+    reposts = get_reposts_in_sub(submission.id)
     if len(reposts) > 0:
         logging.info("found reposts")
         repostLinkString = ""
