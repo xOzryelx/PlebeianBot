@@ -120,7 +120,7 @@ def main():
     # wait for new message
     try:
         for message in reddit.inbox.stream():
-            if message.submission.author.anme != "PlebeianBot":
+            if message.submission.author.name != "PlebeianBot":
                 logging.info("found new message")
                 if message.new:
                     if message.subreddit.display_name == "PlebeianAR":
