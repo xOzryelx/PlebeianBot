@@ -64,6 +64,7 @@ def createTable(sortedList):
 |3|{post3} |{score3}|{user3}|
 |4|{post4} |{score4}|{user4}|
 |5|{post5} |{score5}|{user5}|
+
 &#x200B;
 """
     try:
