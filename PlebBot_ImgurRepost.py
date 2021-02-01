@@ -185,7 +185,7 @@ def search_reposts(post_id):
         'image_match_percent': 65,
         'filter_author': False,
         'same_sub': True,
-        # 'only_older':'false',
+        'only_older': True,
         # 'meme_filter':'false',
         # 'filter_dead_matches':False,
     }
@@ -253,7 +253,10 @@ if __name__ == "__main__":
     try:
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
-            main()
+            if submission.author.name != "PlebeianBot":
+                main()
+            else:
+                logging.info("I posted this, so I won't comment")
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
