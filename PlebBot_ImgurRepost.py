@@ -3,17 +3,20 @@ from praw.exceptions import PRAWException
 import pyimgur
 import json
 import logging
+from http import HTTPStatus
+import requests
 
-# build 28.01.21-2
+# build 30.01.21-1
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_ImgurRepost.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_ImgurRepost.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 # setting predefined replies
 IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
-REPLY_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 0.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
-                 "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
-                 "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. Currently only testing, so don't startle me.)"
+GENERAL_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 0.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
+                   "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
+                   "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. You can look at my source code on [github](https://github.com/xOzryelx/PlebeianBot).)"
+REPOST_REPLY = "This may be a repost. RepostSleuthBot found these matching posts: {} \n \n"
 
 # some global variables for later
 imgur_ids = []
@@ -164,33 +167,77 @@ def uploadToImgur():
     return imgur_post_url
 
 
+# tries to check if post is a repost. Stolen from the RedditAutoCrosspostBot https://github.com/Toldry/RedditAutoCrosspostBot
+def get_reposts_in_sub(post_id):
+    global subreddit
+    posts = search_reposts(post_id)
+    posts_in_target_sub = [p for p in posts if p['subreddit'].lower() == subreddit.display_name.lower()]
+    return posts_in_target_sub
+    # the dict this function returns has the following structure:
+    # [{'post_id': 'k6qn88', 'url': 'https://i.redd.it/0ih30efcs7361.jpg', 'shortlink': None, 'perma_link': '/r/gay_irl/comments/k6qn88/gayirl/', 'title': 'Gay🦸\\u200d♂️irl', 'dhash_v': 'ffff0000000010fe30263efdccc880009bff06ff16006110fad3988c0717fffd', 'dhash_h': '5331f0001a4f0e792a716b64cd5991d91349358d3d8d6dcfc5c735873b873f87', 'created_at': 1607106877.0, 'author': 'star37o', 'subreddit': 'gay_irl'}]
+
+
+def search_reposts(post_id):
+    parameters = {
+        'filter': True,
+        'post_id': post_id,
+        'include_crossposts': True,
+        'image_match_percent': 65,
+        'filter_author': False,
+        'same_sub': True,
+        'only_older': True,
+        # 'meme_filter':'false',
+        # 'filter_dead_matches':False,
+    }
+    try:
+        response = requests.get('https://api.repostsleuth.com/image', params=parameters)
+    except Exception as ex:
+        logging.warning(f'Encountered error while accessing api.repostsleuth.com: {ex}')
+        return []
+
+    if response.status_code != HTTPStatus.OK:
+        logging.warning(f'Encountered error while accessing api.repostsleuth.com: {response.reason}, most likely because the source submission is a video.')
+        return []
+
+    content = response.json()
+    posts = [x['post'] for x in content['matches']]
+    return posts
+
+
 # check if a submission is a crosspost, comment that people can vote
 def main():
+    COMPLETE_REPLY = ""
     global submission
     logging.info(submission.title)
+
+    reposts = get_reposts_in_sub(submission.id)
+    if len(reposts) > 0:
+        logging.info("found reposts")
+        repostLinkString = ""
+        if len(reposts) == 1:
+            COMPLETE_REPLY += REPOST_REPLY.format("https://redd.it/" + reposts[0]["post_id"])
+        elif len(reposts) > 1:
+            for post in reposts:
+                repostLinkString += "https://redd.it/" + post["post_id"] + ", "
+            COMPLETE_REPLY += REPOST_REPLY.format(repostLinkString)
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         getImageUrlsFromPost()
         imgur_post_url = uploadToImgur()
         if imgur_post_url:
-
-            try:
-                new_comment = submission.reply(IMGUR_REPLY.format(imgur_post_url) + REPLY_TEMPLATE)
-                writeHistoryFile(submission.id, submission.created_utc, new_comment.id, imgur_post_url)
-            except PRAWException as exception:
-                logging.error("writing comment failed")
-                logging.error(exception)
-
+            COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url) + GENERAL_TEMPLATE
         else:
             logging.info("nothing to do here")
     else:
         logging.info("not a crosspost")
-        try:
-            new_comment = submission.reply(REPLY_TEMPLATE)
-            writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
-        except PRAWException as exception:
-            logging.error("writing comment failed")
-            logging.error(exception)
+        COMPLETE_REPLY += GENERAL_TEMPLATE
+
+    try:
+        new_comment = submission.reply(COMPLETE_REPLY)
+        writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
+    except PRAWException as exception:
+        logging.error("writing comment failed")
+        logging.error(exception)
 
     image_urls.clear()
     imgur_ids.clear()
@@ -206,7 +253,10 @@ if __name__ == "__main__":
     try:
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
-            main()
+            if submission.author.name != "PlebeianBot":
+                main()
+            else:
+                logging.info("I posted this, so I won't comment")
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
