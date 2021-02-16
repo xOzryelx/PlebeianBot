@@ -83,7 +83,7 @@ def readVotes(post):
         averageScore = round(plebScore / voteCount, 2)
 
         if voteCount > 0:
-            return EVAL_TEMPLATE.format(plebScore, voteCount, averageScore)
+            return EVAL_TEMPLATE.format(round(plebScore, 2), voteCount, averageScore)
 
     else:
         return 0

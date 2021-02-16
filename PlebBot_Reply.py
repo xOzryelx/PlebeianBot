@@ -88,10 +88,10 @@ def plebVote(message):
                     else:
                         message.reply("Vote registered as a " + str(vote) + "/10(.9) on the pleb scale")
                     message.mark_read()
+                    logging.info("Vote registered")
                 except PRAWException as e:
                     logging.error("unable to reply")
                     logging.error(e)
-                logging.info("Vote registered")
 
         elif vote < 0 or vote >= 10.9:
             try:
