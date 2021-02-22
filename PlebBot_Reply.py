@@ -53,6 +53,8 @@ def plebVote(message):
         logging.warning("Couldn't match regex to comment")
     if vote_string:
         try:
+            if ',' in vote_string:
+                vote_string = vote_string.replace(',', '.')
             # convert chars to bool and round to one decimal
             vote = ast.literal_eval(vote_string)
             vote = round(vote, 1)
