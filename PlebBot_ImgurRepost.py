@@ -205,7 +205,12 @@ def search_reposts(post_id):
 def main():
     COMPLETE_REPLY = ""
     global submission
-    logging.info(submission.title)
+
+    logging.info(submission.title.encode('ascii', 'ignore').decode('ascii'))
+
+    if submission.author.name == "PlebeianBot" or submission.stickied is True:
+        logging.info("Either a stickied post or I posted this myself")
+        return 0
 
     reposts = get_reposts_in_sub(submission.id)
     if len(reposts) > 0:
@@ -250,10 +255,7 @@ if __name__ == "__main__":
     try:
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
-            if submission.author.name != "PlebeianBot":
-                main()
-            else:
-                logging.info("I posted this, so I won't comment")
+            main()
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
