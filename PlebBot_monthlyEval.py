@@ -3,6 +3,7 @@ import datetime
 import praw
 import logging
 from dateutil.relativedelta import relativedelta
+from prettytable import PrettyTable, MARKDOWN
 
 # build 28.01.21-2
 
@@ -54,63 +55,36 @@ def readVotes(post):
         return [0, 0, 0]
 
 
-def createTable(sortedList):
-    blankTable = """&#x200B;
-
-|Rank|Post|Score|Author|
-|:-|:-|:-|:-|
-|1|{post1} |{score1}|{user1}|
-|2|{post2} |{score2}|{user2}|
-|3|{post3} |{score3}|{user3}|
-|4|{post4} |{score4}|{user4}|
-|5|{post5} |{score5}|{user5}|
-
-&#x200B;
-"""
+def createTableScore(sortedList):
+    tableScore = PrettyTable()
+    tableScore.set_style(MARKDOWN)
+    tableScore.field_names = ["Rank", "Post", "Score", "Author"]
     try:
-        post1 = reddit.submission(sortedList[0][0])
-        post2 = reddit.submission(sortedList[1][0])
-        post3 = reddit.submission(sortedList[2][0])
-        post4 = reddit.submission(sortedList[3][0])
-        post5 = reddit.submission(sortedList[4][0])
+        for x in range(5):
+            post = reddit.submission(sortedList[x][0])
+            tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedList[x][1][0], "u/" + post.author.name])
 
-        formattedTable = blankTable.format(post1="[" + post1.title + "]" + "(" + post1.shortlink + ")",
-                                           post2="[" + post2.title + "]" + "(" + post2.shortlink + ")",
-                                           post3="[" + post3.title + "]" + "(" + post3.shortlink + ")",
-                                           post4="[" + post4.title + "]" + "(" + post4.shortlink + ")",
-                                           post5="[" + post5.title + "]" + "(" + post5.shortlink + ")",
-                                           score1=sortedList[0][1][0],
-                                           score2=sortedList[1][1][0],
-                                           score3=sortedList[2][1][0],
-                                           score4=sortedList[3][1][0],
-                                           score5=sortedList[4][1][0],
-                                           user1="u/" + post1.author.name,
-                                           user2="u/" + post2.author.name,
-                                           user3="u/" + post3.author.name,
-                                           user4="u/" + post4.author.name,
-                                           user5="u/" + post5.author.name,
-                                           )
     except Exception as e:
         logging.error("Unable to get posts fpr evaluations")
         logging.error(e)
         return 0
 
-    return formattedTable
+    print(tableScore)
+    return tableScore
 
 
 def makePost(sortedByScore):
     replyBlank = """Hello r/PlebeianAR  \n\n
-The time has come for me to make the first evaluation for the posts in January.  \n
-Since I had some big changes to my source code done not every post from January actually made it here. This will of course improve for February.  
-If you want to review or contribute check out my [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
-There will be more ranking in the future. For now it is only the highest Overall Pleb Score (sum of all votes)  \n\n
+This is the February 2021 evaluation. A little late since I was busy with ~~wanking~~ stuff.  \n
+Last month I said the evaluation would improve for the next one... Well, maybe next time  \n  
+You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
+
 Overall Pleb Score:  
 {overallPlebScore}
 
-Let me know what you think about this ranking. I'm always open for feature request and suggestions for improvements
 """
 
-    overallPlebScore = createTable(sortedByScore)
+    overallPlebScore = createTableScore(sortedByScore)
     formattedReply = replyBlank.format(overallPlebScore=overallPlebScore)
 
     return formattedReply
@@ -122,7 +96,7 @@ def main():
     ranking = {}
 
     for post in commentHistory:
-        if datetime.datetime.utcfromtimestamp(commentHistory[post]["post_timestamp"]) > datetime.datetime.today() + relativedelta(months=-1):
+        if datetime.datetime.utcfromtimestamp(1614556800) > datetime.datetime.today() + relativedelta(months=-1):
             ranking[post] = readVotes(post)
         else:
             logging.info("not in time range")
