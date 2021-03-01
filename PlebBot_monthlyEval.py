@@ -13,6 +13,7 @@ logging.basicConfig(filename='logs/PlebBot_monthlyEval.log', level=logging.INFO,
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
+reddit.validate_on_submit = True
 subreddit = reddit.subreddit("PlebeianAR")
 
 

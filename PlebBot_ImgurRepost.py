@@ -27,6 +27,7 @@ creds = {}
 reddit = praw.Reddit("PlebeianBot")
 subreddit = reddit.subreddit("PlebeianAR")
 imgur_client = pyimgur.Imgur(client_id="4aa90a17cd35be9")
+mods = list(subreddit.moderator())
 
 
 # get auth info for imgur_client from config file
@@ -208,7 +209,7 @@ def main():
 
     logging.info(submission.title.encode('ascii', 'ignore').decode('ascii'))
 
-    if submission.author.name == "PlebeianBot" or submission.stickied is True:
+    if submission.author.name == "PlebeianBot" or (submission.stickied is True and submission.author in mods):
         logging.info("Either a stickied post or I posted this myself")
         return 0
 
