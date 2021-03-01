@@ -69,7 +69,6 @@ def createTableScore(sortedList):
         logging.error(e)
         return 0
 
-    print(tableScore)
     return tableScore
 
 
@@ -79,7 +78,7 @@ This is the February 2021 evaluation. A little late since I was busy with ~~wank
 Last month I said the evaluation would improve for the next one... Well, maybe next time  \n  
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
 
-Overall Pleb Score:  
+Overall Pleb Score:  \n\n
 {overallPlebScore}
 
 """
@@ -104,7 +103,7 @@ def main():
     sortedByScore = sorted(ranking.items(), key=lambda e: e[1][0], reverse=True)
 
     postText = makePost(sortedByScore)
-    subreddit.submit(title="Pleb Vote Evaluation January", selftext=postText)
+    subreddit.submit(title="Pleb Vote Evaluation February", selftext=postText)
 
     return 0
 
