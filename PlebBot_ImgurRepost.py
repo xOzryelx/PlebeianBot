@@ -3,8 +3,6 @@ from praw.exceptions import PRAWException
 import pyimgur
 import json
 import logging
-from http import HTTPStatus
-import requests
 
 # build 30.01.21-1
 
@@ -16,7 +14,6 @@ IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur](
 GENERAL_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 0.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
                    "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \n" \
                    "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. You can look at my source code on [github](https://github.com/xOzryelx/PlebeianBot).)"
-REPOST_REPLY = "This may be a repost. RepostSleuthBot found these matching posts: {} \n \n"
 
 # some global variables for later
 imgur_ids = []
@@ -168,40 +165,6 @@ def uploadToImgur():
     return imgur_post_url
 
 
-# tries to check if post is a repost. Stolen from the RedditAutoCrosspostBot https://github.com/Toldry/RedditAutoCrosspostBot
-def get_reposts_in_sub(post_id):
-    global subreddit
-    posts = search_reposts(post_id)
-    posts_in_target_sub = [p for p in posts if p['subreddit'].lower() == subreddit.display_name.lower()]
-    return posts_in_target_sub
-
-
-def search_reposts(post_id):
-    parameters = {
-        'filter': True,
-        'post_id': post_id,
-        'include_crossposts': True,
-        'targetImageMatch': 65,
-        'sameSub': True,
-        'filterOnlyOlder': True,
-        # 'meme_filter':'false',
-        # 'filter_dead_matches':False,
-    }
-    try:
-        response = requests.get('https://api.repostsleuth.com/image', params=parameters)
-    except Exception as ex:
-        logging.warning(f'Encountered error while accessing api.repostsleuth.com: {ex}')
-        return []
-
-    if response.status_code != HTTPStatus.OK:
-        logging.warning(f'Encountered error while accessing api.repostsleuth.com: {response.reason}, most likely because the source submission is a video.')
-        return []
-
-    content = response.json()
-    posts = [x['post'] for x in content['matches']]
-    return posts
-
-
 # check if a submission is a crosspost, comment that people can vote
 def main():
     COMPLETE_REPLY = ""
@@ -213,17 +176,6 @@ def main():
         logging.info("Either a stickied post or I posted this myself")
         return 0
 
-    reposts = get_reposts_in_sub(submission.id)
-    if len(reposts) > 0:
-        logging.info("found reposts")
-        repostLinkString = ""
-        if len(reposts) == 1:
-            COMPLETE_REPLY += REPOST_REPLY.format("https://redd.it/" + reposts[0]["post_id"])
-        elif len(reposts) > 1:
-            for post in reposts:
-                repostLinkString += "https://redd.it/" + post["post_id"] + ", "
-            COMPLETE_REPLY += REPOST_REPLY.format(repostLinkString)
-
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         getImageUrlsFromPost()
         imgur_post_url = uploadToImgur()
@@ -233,7 +185,8 @@ def main():
             logging.info("nothing to do here")
     else:
         logging.info("not a crosspost")
-        COMPLETE_REPLY += GENERAL_TEMPLATE
+
+    COMPLETE_REPLY += GENERAL_TEMPLATE
 
     try:
         new_comment = submission.reply(COMPLETE_REPLY)
