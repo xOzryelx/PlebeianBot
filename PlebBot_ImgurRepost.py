@@ -14,7 +14,7 @@ logging.basicConfig(filename='logs/PlebBot_ImgurRepost.log', level=logging.INFO,
 # setting predefined replies
 IMGUR_REPLY = "In case the original post gets deleted [here is a copy on Imgur]({}) \n \n"
 GENERAL_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes from 0.0 to 10.9 (one decimal!). Just answer **this comment** with **\"Pleb vote 1\"** for just a hint of plebery " \
-                   "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \nThere will be monthly rankings and the best posts OP will receive a special flair. **Rest of this month is just for testing!**" \
+                   "or **\"Pleb vote 10\"** for the worst you've ever seen. \n \n" \
                    "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. You can look at my source code on [github](https://github.com/xOzryelx/PlebeianBot).)"
 REPOST_REPLY = "This may be a repost. RepostSleuthBot found these matching posts: {} \n \n"
 
