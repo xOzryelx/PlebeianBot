@@ -180,7 +180,7 @@ def main():
         getImageUrlsFromPost()
         imgur_post_url = uploadToImgur()
         if imgur_post_url:
-            COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url) + GENERAL_TEMPLATE
+            COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
         else:
             logging.info("nothing to do here")
     else:
