@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 # build 30.01.21-1
 
 # setting logging format
-logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.basicConfig(filename='logs/PlebBot_dailyEval.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
 # logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # init for reddit API
