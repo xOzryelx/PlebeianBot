@@ -38,7 +38,7 @@ def readFile(filename):
 
 
 # read the votes and calc the score
-def readVotes(post):
+def readVotesOverall(post):
     plebScore = 0
     logging.info("reading votes for given post")
     if post in voteHistory.keys():
@@ -56,14 +56,17 @@ def readVotes(post):
         return [0, 0, 0]
 
 
-def createTableScore(sortedList):
+def createTableScore(sortedListScore):
     tableScore = PrettyTable()
     tableScore.set_style(MARKDOWN)
     tableScore.field_names = ["Rank", "Post", "Score", "Author"]
     try:
         for x in range(5):
-            post = reddit.submission(sortedList[x][0])
-            tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedList[x][1][0], "u/" + post.author.name])
+            post = reddit.submission(sortedListScore[x][0])
+            if post.selftext == '[deleted]':
+                tableScore.add_row([x + 1, post.title + " (deleted)", sortedListScore[x][1][1], ">! ṙ̴̬e̴̮̒d̵̻̃̋a̴̲̮̓̋c̵͉͍͆t̶̬̠̄ẽ̴̹̃d̷̮̋͌ !<"])
+            else:
+                tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedListScore[x][1][0], "u/" + post.author.name])
 
     except Exception as e:
         logging.error("Unable to get posts fpr evaluations")
@@ -73,19 +76,52 @@ def createTableScore(sortedList):
     return tableScore
 
 
-def makePost(sortedByScore):
-    replyBlank = """Hello r/PlebeianAR  \n\n
-This is the February 2021 evaluation. A little late since I was busy with ~~wanking~~ stuff.  \n
-Last month I said the evaluation would improve for the next one... Well, maybe next time  \n  
-You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
+def createTableVotes(sortedListVotes):
+    tableVotes = PrettyTable()
+    tableVotes.set_style(MARKDOWN)
+    tableVotes.field_names = ["Rank", "Post", "Votes", "Author"]
+    try:
+        for x in range(5):
+            post = reddit.submission(sortedListVotes[x][0])
+            if post.selftext == '[deleted]':
+                tableVotes.add_row([x + 1, post.title + " (deleted)", sortedListVotes[x][1][1], ">! ṙ̴̬e̴̮̒d̵̻̃̋a̴̲̮̓̋c̵͉͍͆t̶̬̠̄ẽ̴̹̃d̷̮̋͌ !<"])
 
-Overall Pleb Score:  \n\n
-{overallPlebScore}
+            else:
+                tableVotes.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedListVotes[x][1][1], "u/" + post.author.name])
+
+    except Exception as e:
+        logging.error("Unable to get posts for evaluations")
+        logging.error(e)
+        return 0
+
+    return tableVotes
+
+
+def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
+    replyBlank = """Hello r/PlebeianAR  \n\n
+This is the March 2021 evaluation. This time actually on time and enhanced.  \n
+Since I have five weeks of spare time, let me know what you want to see here in the next weeks.  \n  
+You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
+  
+  
+So in March we had a total score of {aggregatedPlebScore} on {numberOfPosts} posts. The average post got a score of {totalAverage}  \n\n
+
+Highest Pleb Score:  \n\n
+{overallPlebScore}  \n\n
+
+
+Most vote on (probably redundant):  \n\n
+{mostVotes}  \n\n
+
+
+Worst post (at least three votes, lowest average):  \n\n
+{worstPost}
+
+
 
 """
 
-    overallPlebScore = createTableScore(sortedByScore)
-    formattedReply = replyBlank.format(overallPlebScore=overallPlebScore)
+    formattedReply = replyBlank.format(aggregatedPlebScore=aggregatedPlebScore, numberOfPosts=numberOfPosts, totalAverage=totalAverage, overallPlebScore=tableScore, mostVotes=tableVotes, worstPost=tableWorst)
 
     return formattedReply
 
@@ -94,17 +130,33 @@ Overall Pleb Score:  \n\n
 def main():
     logging.info("searching posts to evaluate")
     ranking = {}
+    aggregatedPlebScore = 0
 
     for post in commentHistory:
         if datetime.datetime.utcfromtimestamp(1614556800) > datetime.datetime.today() + relativedelta(months=-1):
-            ranking[post] = readVotes(post)
+            ranking[post] = readVotesOverall(post)
         else:
             logging.info("not in time range")
 
-    sortedByScore = sorted(ranking.items(), key=lambda e: e[1][0], reverse=True)
+    for post in ranking:
+        aggregatedPlebScore += ranking[post][0]
 
-    postText = makePost(sortedByScore)
-    subreddit.submit(title="Pleb Vote Evaluation February", selftext=postText)
+    aggregatedPlebScore = round(aggregatedPlebScore, 2)
+    numberOfPosts = len(ranking)
+    totalAverage = round(aggregatedPlebScore / numberOfPosts, 2)
+
+    sortedByScore = sorted(ranking.items(), key=lambda e: e[1][0], reverse=True)
+    tableScore = createTableScore(sortedByScore)
+
+    mostVotes = sorted(ranking.items(), key=lambda e: e[1][1], reverse=True)
+    tableVotes = createTableVotes(mostVotes)
+
+    worstScore = sorted(ranking.items(), key=lambda e: e[1][0] if e[1][1] > 2 else 1)
+    tableWorst = createTableScore(worstScore)
+
+    postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
+    print(postText)
+    # subreddit.submit(title="Pleb Vote Evaluation February", selftext=postText)
 
     return 0
 
