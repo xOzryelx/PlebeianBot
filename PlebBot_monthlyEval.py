@@ -99,22 +99,22 @@ def createTableVotes(sortedListVotes):
 
 def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
     replyBlank = """Hello r/PlebeianAR  \n\n
-This is the March 2021 evaluation. This time actually on time and enhanced.  \n
+This is the March 2021 evaluation. This time actually on time and improved as promised.  \n
 Since I have five weeks of spare time, let me know what you want to see here in the next weeks.  \n  
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
-  
-  
-So in March we had a total score of {aggregatedPlebScore} on {numberOfPosts} posts. The average post got a score of {totalAverage}  \n\n
-
-Highest Pleb Score:  \n\n
+  \n
+  \n
+So in March we had a total score of **{aggregatedPlebScore}** on **{numberOfPosts}** posts. The average post got a score of **{totalAverage}**  \n\n
+  \n
+**Highest Pleb Score:**  \n\n
 {overallPlebScore}  \n\n
 
 
-Most vote on (probably redundant):  \n\n
+**Most voted on (probably redundant):**  \n\n
 {mostVotes}  \n\n
 
 
-Worst post (at least three votes, lowest average):  \n\n
+**Worst post (at least three votes, lowest average):**  \n\n
 {worstPost}
 
 
@@ -155,8 +155,7 @@ def main():
     tableWorst = createTableScore(worstScore)
 
     postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
-    print(postText)
-    # subreddit.submit(title="Pleb Vote Evaluation February", selftext=postText)
+    subreddit.submit(title="Pleb Vote Evaluation February", selftext=postText)
 
     return 0
 
