@@ -97,10 +97,11 @@ def createTableVotes(sortedListVotes):
     return tableVotes
 
 
+# Post text template
 def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
     replyBlank = """Hello r/PlebeianAR  \n\n
 This is the March 2021 evaluation. This time actually on time and improved as promised.  \n
-Since I have five weeks of spare time, let me know what you want to see here in the next weeks.  \n  
+Since I have five weeks of spare time, let me know what you want to see here in the next weeks. For starters here are all the images I saved packed together in one [Imgur album](https://imgur.com/a/iLMaLPr)  \n  
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
   \n
   \n
@@ -126,7 +127,6 @@ So in March we had a total score of **{aggregatedPlebScore}** on **{numberOfPost
     return formattedReply
 
 
-# find post that the bot has commented on that are older than 24h and haven't been evaluated
 def main():
     logging.info("searching posts to evaluate")
     ranking = {}
@@ -155,7 +155,7 @@ def main():
     tableWorst = createTableScore(worstScore)
 
     postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
-    subreddit.submit(title="Pleb Vote Evaluation February", selftext=postText)
+    subreddit.submit(title="Pleb Vote Evaluation March", selftext=postText)
 
     return 0
 
