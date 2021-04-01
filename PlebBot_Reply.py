@@ -2,7 +2,6 @@ import praw
 from praw.exceptions import PRAWException
 import json
 import re
-import ast
 import logging
 
 # build 30.01.21-1
@@ -56,7 +55,7 @@ def plebVote(message):
             if ',' in vote_string:
                 vote_string = vote_string.replace(',', '.')
             # convert chars to bool and round to one decimal
-            vote = ast.literal_eval(vote_string)
+            vote = float(vote_string)
             vote = round(vote, 1)
 
         except Exception as e:
