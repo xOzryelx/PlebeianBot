@@ -101,7 +101,7 @@ def createTableVotes(sortedListVotes):
 # Post text template
 def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
     replyBlank = """Hello r/PlebeianAR  \n\n
-This is the March 2021 evaluation. This time actually on time and improved as promised.  \n
+This is the March 2021 evaluation. This time actually on time and improved as promised. Sadly something went wrong with the json files and I lost a few days of data (26th - 31th March). Time to go Database!  \n
 Since I have five weeks of spare time, let me know what you want to see here in the next weeks. For starters here are all the images I saved packed together in one [Imgur album](https://imgur.com/a/iLMaLPr)  \n  
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
   \n
