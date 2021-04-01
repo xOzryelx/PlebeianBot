@@ -4,6 +4,7 @@ import praw
 import logging
 from dateutil.relativedelta import relativedelta
 from prettytable import PrettyTable, MARKDOWN
+# import sys
 
 # build 28.01.21-2
 
@@ -59,14 +60,14 @@ def readVotesOverall(post):
 def createTableScore(sortedListScore):
     tableScore = PrettyTable()
     tableScore.set_style(MARKDOWN)
-    tableScore.field_names = ["Rank", "Post", "Score", "Author"]
+    tableScore.field_names = ["Rank", "Post", "Score", "Votes", "Author"]
     try:
         for x in range(5):
             post = reddit.submission(sortedListScore[x][0])
             if post.selftext == '[deleted]':
-                tableScore.add_row([x + 1, post.title + " (deleted)", sortedListScore[x][1][1], ">! ṙ̴̬e̴̮̒d̵̻̃̋a̴̲̮̓̋c̵͉͍͆t̶̬̠̄ẽ̴̹̃d̷̮̋͌ !<"])
+                tableScore.add_row([x + 1, post.title + " (deleted)", sortedListScore[x][1][0], sortedListScore[x][1][1], ">! ṙ̴̬e̴̮̒d̵̻̃̋a̴̲̮̓̋c̵͉͍͆t̶̬̠̄ẽ̴̹̃d̷̮̋͌ !<"])
             else:
-                tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedListScore[x][1][0], "u/" + post.author.name])
+                tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedListScore[x][1][0], sortedListScore[x][1][1], "u/" + post.author.name])
 
     except Exception as e:
         logging.error("Unable to get posts fpr evaluations")
@@ -101,8 +102,10 @@ def createTableVotes(sortedListVotes):
 def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
     replyBlank = """Hello r/PlebeianAR  \n\n
 This is the March 2021 evaluation. This time actually on time and improved as promised.  \n
-Since I have five weeks of spare time, let me know what you want to see here in the next weeks. For starters here are all the images I saved packed together in one [Imgur album](https://imgur.com/a/iLMaLPr)  \n  
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
+Since I have five weeks of spare time, let me know what you want to see here in the next weeks.  \n
+For starters here are all the images I saved packed together in one [Imgur album](https://imgur.com/a/iLMaLPr)  \n  
+
   \n
   \n
 So in March we had a total score of **{aggregatedPlebScore}** on **{numberOfPosts}** posts. The average post got a score of **{totalAverage}**  \n\n
@@ -151,7 +154,7 @@ def main():
     mostVotes = sorted(ranking.items(), key=lambda e: e[1][1], reverse=True)
     tableVotes = createTableVotes(mostVotes)
 
-    worstScore = sorted(ranking.items(), key=lambda e: e[1][0] if e[1][1] > 2 else 1)
+    worstScore = sorted(ranking.items(), key=lambda e: (e[1][0] if e[1][1] > 2 else 1, -e[1][1]))
     tableWorst = createTableScore(worstScore)
 
     postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
