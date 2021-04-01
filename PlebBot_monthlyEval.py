@@ -4,13 +4,13 @@ import praw
 import logging
 from dateutil.relativedelta import relativedelta
 from prettytable import PrettyTable, MARKDOWN
-import sys
+# import sys
 
 # build 28.01.21-2
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_monthlyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
-logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+# logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
@@ -60,14 +60,14 @@ def readVotesOverall(post):
 def createTableScore(sortedListScore):
     tableScore = PrettyTable()
     tableScore.set_style(MARKDOWN)
-    tableScore.field_names = ["Rank", "Post", "Score", "Author"]
+    tableScore.field_names = ["Rank", "Post", "Score", "Votes", "Author"]
     try:
         for x in range(5):
             post = reddit.submission(sortedListScore[x][0])
             if post.selftext == '[deleted]':
-                tableScore.add_row([x + 1, post.title + " (deleted)", sortedListScore[x][1][1], ">! ṙ̴̬e̴̮̒d̵̻̃̋a̴̲̮̓̋c̵͉͍͆t̶̬̠̄ẽ̴̹̃d̷̮̋͌ !<"])
+                tableScore.add_row([x + 1, post.title + " (deleted)", sortedListScore[x][1][0], sortedListScore[x][1][1], ">! ṙ̴̬e̴̮̒d̵̻̃̋a̴̲̮̓̋c̵͉͍͆t̶̬̠̄ẽ̴̹̃d̷̮̋͌ !<"])
             else:
-                tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedListScore[x][1][0], "u/" + post.author.name])
+                tableScore.add_row([x + 1, "[" + post.title + "]" + "(" + post.shortlink + ")", sortedListScore[x][1][0], sortedListScore[x][1][1], "u/" + post.author.name])
 
     except Exception as e:
         logging.error("Unable to get posts fpr evaluations")
@@ -152,7 +152,7 @@ def main():
     mostVotes = sorted(ranking.items(), key=lambda e: e[1][1], reverse=True)
     tableVotes = createTableVotes(mostVotes)
 
-    worstScore = sorted(ranking.items(), key=lambda e: e[1][0] if e[1][1] > 2 else 1)
+    worstScore = sorted(ranking.items(), key=lambda e: (e[1][0] if e[1][1] > 2 else 1, -e[1][1]))
     tableWorst = createTableScore(worstScore)
 
     postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
