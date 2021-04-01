@@ -4,12 +4,13 @@ import praw
 import logging
 from dateutil.relativedelta import relativedelta
 from prettytable import PrettyTable, MARKDOWN
+import sys
 
 # build 28.01.21-2
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_monthlyEval.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
-# logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # init for reddit API
 reddit = praw.Reddit("PlebeianBot")
@@ -133,7 +134,7 @@ def main():
     aggregatedPlebScore = 0
 
     for post in commentHistory:
-        if datetime.datetime.utcfromtimestamp(1614556800) > datetime.datetime.today() + relativedelta(months=-1):
+        if datetime.datetime.utcfromtimestamp(1617235200) > datetime.datetime.today() + relativedelta(months=-1):
             ranking[post] = readVotesOverall(post)
         else:
             logging.info("not in time range")
