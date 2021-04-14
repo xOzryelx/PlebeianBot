@@ -38,10 +38,15 @@ def get_imgur_access_token():
     files = []
     headers = {}
 
-    response = requests.request("POST", url, headers=headers, data=payload, files=files)
+    try:
+        response = requests.post(url, headers=headers, data=payload, files=files)
+        response.raise_for_status()
+        return response.json()['access_token']
 
-    response_data = response.json()
-    return response_data['access_token']
+    except requests.exceptions.HTTPError as err:
+        logging.warning("Imgur returned an error:")
+        logging.warning(err)
+        return 0
 
 
 # find all passed submissions that haven't been processed
@@ -108,23 +113,30 @@ def imgurUrlParser(url):
     image_regex = re.match(url_regex + '/(\w+)', url)
     direct_link_regex = re.match(url_regex + '/(\w+)(\.\w+)', url)
 
-    if album_regex:
-        response = requests.request("GET", 'https://api.imgur.com/3/album/' + album_regex.group(2) + '/images', headers={'Authorization': ('Bearer ' + access_token)}).json()
-        links.append(response['data']['link'])
+    try:
+        if album_regex:
+            response = requests.get('https://api.imgur.com/3/album/' + album_regex.group(2) + '/images', headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            links.append(response.json()['data']['link'])
 
-    elif gallery_regex:
+        elif gallery_regex:
+            response = requests.get('https://api.imgur.com/3/gallery/' + gallery_regex.group(2), headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            for i in response.json()['data']['images']:
+                links.append(i['link'])
 
-        response = requests.request("GET", 'https://api.imgur.com/3/gallery/' + gallery_regex.group(2), headers={'Authorization': ('Bearer ' + access_token)}).json()
+        elif direct_link_regex:
+            links.append(url)
 
-        for i in response['data']['images']:
-            links.append(i['link'])
+        elif image_regex:
+            response = requests.get('https://api.imgur.com/3/image/' + image_regex.group(1), headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            links.append(response.json()['data']['link'])
 
-    elif direct_link_regex:
-        links.append(url)
-
-    elif image_regex:
-        response = requests.request("GET", 'https://api.imgur.com/3/image/' + image_regex.group(1), headers={'Authorization': ('Bearer ' + access_token)}).json()
-        links.append(response['data']['link'])
+    except requests.exceptions.HTTPError as err:
+        logging.warning("Imgur returned an error:")
+        logging.warning(err)
+        return 0
 
     return links
 
@@ -132,7 +144,7 @@ def imgurUrlParser(url):
 # get urls of images in submission for uploading to imgur
 def getImageUrlsFromPost():
     image_urls = []
-    global submission
+
     if "https://www.reddit.com/gallery/" in submission.url:
         for image in submission.crosspost_parent_list[0]['media_metadata']:
             image_urls.append(submission.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
@@ -150,37 +162,43 @@ def getImageUrlsFromPost():
 
 # upload found images to imgur by url
 def uploadToImgur(image_urls):
-    global submission
     imgur_ids = []
     access_token = get_imgur_access_token()
 
     for url in image_urls:
         try:
             response = requests.post('https://api.imgur.com/3/upload', data={'image': url, 'type': 'url'}, headers={'Authorization': ('Bearer ' + access_token)})
-        except Exception as exception:
-            logging.error("Can't upload to imgur")
-            logging.error(exception)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            logging.warning("Imgur returned an error:")
+            logging.warning(err)
             continue
         imgur_post = response.json()['data']['id']
         imgur_ids.append(imgur_post)
 
     if len(imgur_ids) > 1:
-        imgur_album = requests.post('https://api.imgur.com/3/album', data={'ids[]': imgur_ids, 'title': submission.title}, headers={'Authorization': ('Bearer ' + access_token)}).json()['data']
-        imgur_album_id = imgur_album['id']
-        imgur_post_url = "https://imgur.com/a/" + imgur_album_id
+        try:
+            response = requests.post('https://api.imgur.com/3/album', data={'ids[]': imgur_ids, 'title': submission.title}, headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            imgur_album = response.json()['data']
+            imgur_album_id = imgur_album['id']
+            imgur_post_url = "https://imgur.com/a/" + imgur_album_id
+            return imgur_post_url
+        except requests.exceptions.HTTPError as err:
+            logging.warning("Imgur returned an error:")
+            logging.warning(err)
+
     elif len(imgur_ids) == 1:
         imgur_post_url = "https://imgur.com/" + imgur_ids[0]
+        return imgur_post_url
     else:
         logging.info("empty posts url")
         return 0
-
-    return imgur_post_url
 
 
 # check if a submission is a crosspost, comment that people can vote
 def main():
     COMPLETE_REPLY = ""
-    global submission
 
     logging.info(submission.title.encode('ascii', 'ignore').decode('ascii'))
 
@@ -190,7 +208,12 @@ def main():
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         image_urls = getImageUrlsFromPost()
-        imgur_post_url = uploadToImgur(image_urls)
+        if image_urls:
+            imgur_post_url = uploadToImgur(image_urls)
+        else:
+            logging.warning("didn't get any image urls")
+            imgur_post_url = None
+
         if imgur_post_url:
             COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
         else:
