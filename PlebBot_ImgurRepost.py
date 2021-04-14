@@ -18,16 +18,12 @@ GENERAL_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes 
                    "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. You can look at my source code on [github](https://github.com/xOzryelx/PlebeianBot).)"
 
 # some global variables for later
-imgur_ids = []
-image_urls = []
-creds = {}
 config = configparser.ConfigParser()
 
 # init for reddit and imgur API
 reddit = praw.Reddit("PlebeianBot")
 subreddit = reddit.subreddit("PlebeianAR")
 mods = list(subreddit.moderator())
-IMGUR_API_URL = 'https://api.imgur.com/'
 config.read("praw.ini")
 
 
@@ -102,6 +98,7 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
 
 
 def imgurUrlParser(url):
+    links = []
     access_token = get_imgur_access_token()
     url_regex = "^[http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/|www\.]*[imgur|i.imgur]*\.com"
     url = re.match(url_regex, url).string
@@ -109,40 +106,52 @@ def imgurUrlParser(url):
     gallery_regex = re.match(url_regex + '(/gallery/)(\w+)', url)
     album_regex = re.match(url_regex + '(/a/)(\w+)', url)
     image_regex = re.match(url_regex + '/(\w+)', url)
-    # direct_link_regex = re.match(url_regex + '/(\w+)(\.\w+)', url)
+    direct_link_regex = re.match(url_regex + '/(\w+)(\.\w+)', url)
 
     if album_regex:
-        response = requests.request("GET", 'https://api.imgur.com/3/album/' + gallery_regex.group(2) + '/images', headers={'Authorization': ('Bearer ' + access_token)}).json()
-        yield response['data']['id']
+        response = requests.request("GET", 'https://api.imgur.com/3/album/' + album_regex.group(2) + '/images', headers={'Authorization': ('Bearer ' + access_token)}).json()
+        links.append(response['data']['link'])
+
     elif gallery_regex:
-        return {"id": album_regex.group(2), "type": "album"}
+
+        response = requests.request("GET", 'https://api.imgur.com/3/gallery/' + gallery_regex.group(2), headers={'Authorization': ('Bearer ' + access_token)}).json()
+
+        for i in response['data']['images']:
+            links.append(i['link'])
+
+    elif direct_link_regex:
+        links.append(url)
+
     elif image_regex:
-        return {"id": image_regex.group(1), "type": "image"}
-    # elif direct_link_regex:
-    # return {"id": direct_link_regex.group(1), "type": "image"}
+        response = requests.request("GET", 'https://api.imgur.com/3/image/' + image_regex.group(1), headers={'Authorization': ('Bearer ' + access_token)}).json()
+        links.append(response['data']['link'])
+
+    return links
 
 
 # get urls of images in submission for uploading to imgur
 def getImageUrlsFromPost():
+    image_urls = []
     global submission
     if "https://www.reddit.com/gallery/" in submission.url:
         for image in submission.crosspost_parent_list[0]['media_metadata']:
             image_urls.append(submission.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
 
     elif "https://imgur.com/" in submission.url:
-        image_urls.append(next(imgurUrlParser(submission.url)))
+        image_urls.extend(imgurUrlParser(submission.url))
 
     elif "https://v.redd.it/" in submission.url:
         image_urls.append(submission.crosspost_parent_list[0]['media']['reddit_video']['fallback_url'].split("?", 1)[0])
 
     else:
         image_urls.append(submission.url)
-    return 0
+    return image_urls
 
 
 # upload found images to imgur by url
-def uploadToImgur():
+def uploadToImgur(image_urls):
     global submission
+    imgur_ids = []
     access_token = get_imgur_access_token()
 
     for url in image_urls:
@@ -180,8 +189,8 @@ def main():
         return 0
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
-        getImageUrlsFromPost()
-        imgur_post_url = uploadToImgur()
+        image_urls = getImageUrlsFromPost()
+        imgur_post_url = uploadToImgur(image_urls)
         if imgur_post_url:
             COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
         else:
@@ -199,8 +208,6 @@ def main():
         logging.error("writing comment failed")
         logging.error(exception)
 
-    image_urls.clear()
-    imgur_ids.clear()
     logging.info('done')
     return 0
 
