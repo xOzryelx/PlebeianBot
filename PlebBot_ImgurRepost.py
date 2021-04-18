@@ -6,8 +6,6 @@ import requests
 import configparser
 import re
 
-# build 30.01.21-1
-
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_ImgurRepost.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -20,7 +18,7 @@ GENERAL_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes 
 # some global variables for later
 config = configparser.ConfigParser()
 
-# init for reddit and imgur API
+# init for praw and config
 reddit = praw.Reddit("PlebeianBot")
 subreddit = reddit.subreddit("PlebeianAR")
 mods = list(subreddit.moderator())
@@ -29,7 +27,7 @@ config.read("praw.ini")
 
 # get auth info for imgur_client from config file
 def get_imgur_access_token():
-    url = "https://api.imgur.com/oauth2/token"
+    api_url = "https://api.imgur.com/oauth2/token"
 
     payload = {'refresh_token': config["imgur"]["refresh_token"],
                'client_id': config["imgur"]["client_id"],
@@ -39,7 +37,7 @@ def get_imgur_access_token():
     headers = {}
 
     try:
-        response = requests.post(url, headers=headers, data=payload, files=files)
+        response = requests.post(api_url, headers=headers, data=payload, files=files)
         response.raise_for_status()
         return response.json()['access_token']
 
@@ -49,9 +47,8 @@ def get_imgur_access_token():
         return 0
 
 
-# find all passed submissions that haven't been processed
+# find all past submissions that haven't been processed
 def clear_backlog():
-    global submission
     logging.info("clearing backlog")
     try:
         with open('history/BotCommentHistory.json', 'r', newline='') as historyFile:
@@ -65,7 +62,7 @@ def clear_backlog():
             for submission in subreddit.new():
                 if submission.id not in commentHistory.keys():
                     logging.info("found post I haven't done")
-                    main()
+                    main(submission)
                 else:
                     return 0
 
@@ -102,9 +99,14 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
     return 0
 
 
+# process imgur urls for the different imgur post types
 def imgurUrlParser(url):
     links = []
     access_token = get_imgur_access_token()
+    if access_token == 0:
+        logging.error("Couldn't renew access token")
+        return 0
+
     url_regex = "^[http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/|www\.]*[imgur|i.imgur]*\.com"
     url = re.match(url_regex, url).string
 
@@ -142,28 +144,31 @@ def imgurUrlParser(url):
 
 
 # get urls of images in submission for uploading to imgur
-def getImageUrlsFromPost():
+def getImageUrlsFromPost(post):
     image_urls = []
 
-    if "https://www.reddit.com/gallery/" in submission.url:
-        for image in submission.crosspost_parent_list[0]['media_metadata']:
-            image_urls.append(submission.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
+    if "https://www.reddit.com/gallery/" in post.url:
+        for image in post.crosspost_parent_list[0]['media_metadata']:
+            image_urls.append(post.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
 
-    elif "https://imgur.com/" in submission.url:
-        image_urls.extend(imgurUrlParser(submission.url))
+    elif "https://imgur.com/" in post.url:
+        image_urls.extend(imgurUrlParser(post.url))
 
-    elif "https://v.redd.it/" in submission.url:
-        image_urls.append(submission.crosspost_parent_list[0]['media']['reddit_video']['fallback_url'].split("?", 1)[0])
+    elif "https://v.redd.it/" in post.url:
+        image_urls.append(post.crosspost_parent_list[0]['media']['reddit_video']['fallback_url'].split("?", 1)[0])
 
     else:
-        image_urls.append(submission.url)
+        image_urls.append(post.url)
     return image_urls
 
 
-# upload found images to imgur by url
+# upload images to imgur by url
 def uploadToImgur(image_urls):
     imgur_ids = []
     access_token = get_imgur_access_token()
+    if access_token == 0:
+        logging.error("Couldn't renew access token")
+        return 0
 
     for url in image_urls:
         try:
@@ -197,7 +202,8 @@ def uploadToImgur(image_urls):
 
 
 # check if a submission is a crosspost, comment that people can vote
-def main():
+def main(submission):
+    image_urls = []
     COMPLETE_REPLY = ""
 
     logging.info(submission.title.encode('ascii', 'ignore').decode('ascii'))
@@ -207,19 +213,33 @@ def main():
         return 0
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
-        image_urls = getImageUrlsFromPost()
-        if image_urls:
-            imgur_post_url = uploadToImgur(image_urls)
-        else:
-            logging.warning("didn't get any image urls")
-            imgur_post_url = None
+        image_urls = getImageUrlsFromPost(submission)
 
-        if imgur_post_url:
-            COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
-        else:
-            logging.info("nothing to do here")
+    elif (s for s in ["://www.reddit.com/r/", "://redd.it/"] if s in submission.url):
+        try:
+            linked_submission = reddit.submission(submission.url)
+            image_urls = getImageUrlsFromPost(linked_submission)
+        except Exception as exception:
+            logging.warning("Probably liked post, but can't get media")
+            logging.warning(exception)
+
     else:
-        logging.info("not a crosspost")
+        logging.warning("not a crosspost")
+        return 0
+
+    if image_urls:
+        imgur_post_url = uploadToImgur(image_urls)
+    else:
+        logging.warning("didn't get any image urls")
+        imgur_post_url = None
+
+    if "not an ar" in submission.title.lower():
+        COMPLETE_REPLY += "Non AR stuff goes in r/FirearmsHallOfShame  \n"
+
+    if imgur_post_url:
+        COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
+    else:
+        logging.info("nothing to do here")
 
     COMPLETE_REPLY += GENERAL_TEMPLATE
 
@@ -242,7 +262,7 @@ if __name__ == "__main__":
     try:
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
-            main()
+            main(submission)
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)

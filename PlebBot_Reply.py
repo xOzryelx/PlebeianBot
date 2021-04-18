@@ -45,7 +45,7 @@ def writeVotes(postId, authorId, vote):
 def plebVote(message):
     # regex to get the numeric chars in the vote comment
     try:
-        vote_string = re.search(r"\s*(pleb vote )((\d{0,2})(([.,]|)\d{0,5}))", message.body.lower()).group(2).replace("pleb vote ", '').rstrip('.')
+        vote_string = re.search(r"\s*(pleb vote )(-?(\d{0,2})(([.,]|)\d{0,5}))", message.body.lower()).group(2).replace("pleb vote ", '').rstrip('.')
     except Exception as e:
         vote_string = ''
         logging.warning(e)
