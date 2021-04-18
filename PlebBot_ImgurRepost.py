@@ -244,9 +244,8 @@ def main(submission):
     COMPLETE_REPLY += GENERAL_TEMPLATE
 
     try:
-        print(1)
-        # new_comment = submission.reply(COMPLETE_REPLY)
-        # writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
+        new_comment = submission.reply(COMPLETE_REPLY)
+        writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
     except PRAWException as exception:
         logging.error("writing comment failed")
         logging.error(exception)
