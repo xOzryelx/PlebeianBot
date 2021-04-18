@@ -147,7 +147,7 @@ def imgurUrlParser(url):
 def getImageUrlsFromPost(post):
     image_urls = []
 
-    if "https://www.reddit.com/gallery/" in post.url:
+    if hasattr(post, "is_gallery"):
         for image in post.crosspost_parent_list[0]['media_metadata']:
             image_urls.append(post.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
 
@@ -213,19 +213,21 @@ def main(submission):
         return 0
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
+        logging.info("found crosspost")
         image_urls = getImageUrlsFromPost(submission)
 
-    elif "://www.reddit.com/r/" in submission.url:
+    elif "imgur.com" in submission.url:
+        logging.info("found imgur link post")
+        image_urls = getImageUrlsFromPost(submission)
+
+    elif hasattr(submission, "post_hint") and submission.post_hint == "link":
+        logging.info("found linked post")
         try:
             linked_submission = reddit.submission(url=submission.url)
             image_urls = getImageUrlsFromPost(linked_submission)
         except Exception as exception:
-            logging.warning("Probably liked post, but can't get media")
+            logging.warning("Probably linked post, but can't get media")
             logging.warning(exception)
-
-    else:
-        logging.warning("not a crosspost")
-        return 0
 
     if image_urls:
         imgur_post_url = uploadToImgur(image_urls)
