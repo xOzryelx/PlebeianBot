@@ -217,7 +217,8 @@ def main(submission):
 
     elif (s for s in ["://www.reddit.com/r/", "://redd.it/"] if s in submission.url):
         try:
-            linked_submission = reddit.submission(submission.url)
+            linked_submission = reddit.submission(url=submission.url)
+            print(linked_submission.url)
             image_urls = getImageUrlsFromPost(linked_submission)
         except Exception as exception:
             logging.warning("Probably liked post, but can't get media")
