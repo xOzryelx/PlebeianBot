@@ -215,7 +215,7 @@ def main(submission):
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
         image_urls = getImageUrlsFromPost(submission)
 
-    elif (s for s in ["://www.reddit.com/r/", "://redd.it/"] if s in submission.url):
+    elif "://www.reddit.com/r/" in submission.url:
         try:
             linked_submission = reddit.submission(url=submission.url)
             image_urls = getImageUrlsFromPost(linked_submission)
@@ -244,8 +244,9 @@ def main(submission):
     COMPLETE_REPLY += GENERAL_TEMPLATE
 
     try:
-        new_comment = submission.reply(COMPLETE_REPLY)
-        writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
+        print(1)
+        # new_comment = submission.reply(COMPLETE_REPLY)
+        # writeHistoryFile(submission.id, submission.created_utc, new_comment.id, "")
     except PRAWException as exception:
         logging.error("writing comment failed")
         logging.error(exception)
