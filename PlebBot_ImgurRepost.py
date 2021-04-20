@@ -119,7 +119,8 @@ def imgurUrlParser(url):
         if album_regex:
             response = requests.get('https://api.imgur.com/3/album/' + album_regex.group(2) + '/images', headers={'Authorization': ('Bearer ' + access_token)})
             response.raise_for_status()
-            links.append(response.json()['data']['link'])
+            for item in response.json()['data']:
+                links.append(item['link'])
 
         elif gallery_regex:
             response = requests.get('https://api.imgur.com/3/gallery/' + gallery_regex.group(2), headers={'Authorization': ('Bearer ' + access_token)})
@@ -172,7 +173,7 @@ def uploadToImgur(image_urls):
 
     for url in image_urls:
         try:
-            response = requests.post('https://api.imgur.com/3/upload', data={'image': url, 'type': 'url'}, headers={'Authorization': ('Bearer ' + access_token)})
+            response = requests.post('https://api.imgur.com/3/upload', data={'image': url, 'type': 'url', 'disable_audio': '0'}, headers={'Authorization': ('Bearer ' + access_token)})
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             logging.warning("Imgur returned an error:")
@@ -240,8 +241,6 @@ def main(submission):
 
     if imgur_post_url:
         COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
-    else:
-        logging.info("nothing to do here")
 
     COMPLETE_REPLY += GENERAL_TEMPLATE
 
