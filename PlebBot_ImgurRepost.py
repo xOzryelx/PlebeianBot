@@ -1,10 +1,10 @@
 import praw
 from praw.exceptions import PRAWException
-import pyimgur
 import json
 import logging
-
-# build 30.01.21-1
+import requests
+import configparser
+import re
 
 # setting logging format
 logging.basicConfig(filename='logs/PlebBot_ImgurRepost.log', level=logging.WARNING, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -16,43 +16,39 @@ GENERAL_TEMPLATE = "You can now vote how pleb this post is. The pleb scale goes 
                    "\n\nIf you try to vote by replying on the post instead of this comment you have a smol pp\n\n^(Beep boop, I'm a bot. You can look at my source code on [github](https://github.com/xOzryelx/PlebeianBot).)"
 
 # some global variables for later
-imgur_ids = []
-image_urls = []
-creds = {}
+config = configparser.ConfigParser()
 
-# init for reddit and imgur API
+# init for praw and config
 reddit = praw.Reddit("PlebeianBot")
 subreddit = reddit.subreddit("PlebeianAR")
-imgur_client = pyimgur.Imgur(client_id="4aa90a17cd35be9")
 mods = list(subreddit.moderator())
+config.read("praw.ini")
 
 
 # get auth info for imgur_client from config file
-def get_imgur_session():
+def get_imgur_access_token():
+    api_url = "https://api.imgur.com/oauth2/token"
+
+    payload = {'refresh_token': config["imgur"]["refresh_token"],
+               'client_id': config["imgur"]["client_id"],
+               'client_secret': config["imgur"]["client_secret"],
+               'grant_type': 'refresh_token'}
+    files = []
+    headers = {}
+
     try:
-        with open('imgur_creds.json', 'r', newline='') as credFile:
-            try:
-                global creds
-                creds = json.load(credFile)
-                if not creds:
-                    logging.error("Empty file or can't read file content")
-                    return 0
-            except Exception as exception:
-                logging.error(exception)
-                logging.error("Empty file or can't read file content")
-                return 0
+        response = requests.post(api_url, headers=headers, data=payload, files=files)
+        response.raise_for_status()
+        return response.json()['access_token']
 
-    except Exception as exception:
-        logging.error(exception)
-        logging.error("Can't open imgur_creds.json")
-
-    imgur_client.client_secret = creds["client_secret"]
-    imgur_client.refresh_token = creds["refresh_token"]
+    except requests.exceptions.HTTPError as err:
+        logging.warning("Imgur returned an error:")
+        logging.warning(err)
+        return 0
 
 
-# find all passed submissions that haven't been processed
+# find all past submissions that haven't been processed
 def clear_backlog():
-    global submission
     logging.info("clearing backlog")
     try:
         with open('history/BotCommentHistory.json', 'r', newline='') as historyFile:
@@ -66,7 +62,7 @@ def clear_backlog():
             for submission in subreddit.new():
                 if submission.id not in commentHistory.keys():
                     logging.info("found post I haven't done")
-                    main()
+                    main(submission)
                 else:
                     return 0
 
@@ -103,72 +99,113 @@ def writeHistoryFile(post_id, post_creation, comment_id, imgur_post_id):
     return 0
 
 
-# get images from a imgur submission
-def getImgurImageUrls(imgurURL):
-    imgurObject = imgur_client.get_at_url(imgurURL)
-    if type(imgurObject) == pyimgur.Gallery_image:
-        image_urls.append(imgurObject.link)
-    elif type(imgurObject) == pyimgur.Album:
-        for image in imgur_client.get_album(imgurObject.id).images:
-            image_urls.append(image.link)
-    elif type(imgurObject) == pyimgur.Image:
-        image_urls.append(imgurObject.link)
-    return 1
+# process imgur urls for the different imgur post types
+def imgurUrlParser(url):
+    links = []
+    access_token = get_imgur_access_token()
+    if access_token == 0:
+        logging.error("Couldn't renew access token")
+        return 0
+
+    url_regex = "^[http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/|www\.]*[imgur|i.imgur]*\.com"
+    url = re.match(url_regex, url).string
+
+    gallery_regex = re.match(url_regex + '(/gallery/)(\w+)', url)
+    album_regex = re.match(url_regex + '(/a/)(\w+)', url)
+    image_regex = re.match(url_regex + '/(\w+)', url)
+    direct_link_regex = re.match(url_regex + '/(\w+)(\.\w+)', url)
+
+    try:
+        if album_regex:
+            response = requests.get('https://api.imgur.com/3/album/' + album_regex.group(2) + '/images', headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            for item in response.json()['data']:
+                links.append(item['link'])
+
+        elif gallery_regex:
+            response = requests.get('https://api.imgur.com/3/gallery/' + gallery_regex.group(2), headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            for i in response.json()['data']['images']:
+                links.append(i['link'])
+
+        elif direct_link_regex:
+            links.append(url)
+
+        elif image_regex:
+            response = requests.get('https://api.imgur.com/3/image/' + image_regex.group(1), headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            links.append(response.json()['data']['link'])
+
+    except requests.exceptions.HTTPError as err:
+        logging.warning("Imgur returned an error:")
+        logging.warning(err)
+        return 0
+
+    return links
 
 
 # get urls of images in submission for uploading to imgur
-def getImageUrlsFromPost():
-    global submission
-    if "https://www.reddit.com/gallery/" in submission.url:
-        for image in submission.crosspost_parent_list[0]['media_metadata']:
-            image_urls.append(submission.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
+def getImageUrlsFromPost(post):
+    image_urls = []
 
-    elif "https://imgur.com/" in submission.url:
-        getImgurImageUrls(submission.url)
+    if hasattr(post, "is_gallery"):
+        for image in post.crosspost_parent_list[0]['media_metadata']:
+            image_urls.append(post.crosspost_parent_list[0]['media_metadata'][image]["s"]["u"].replace("preview", "i").split("?", 1)[0])
 
-    elif "https://v.redd.it/" in submission.url:
-        image_urls.append(submission.crosspost_parent_list[0]['media']['reddit_video']['fallback_url'].split("?", 1)[0])
+    elif "https://imgur.com/" in post.url:
+        image_urls.extend(imgurUrlParser(post.url))
+
+    elif "https://v.redd.it/" in post.url:
+        image_urls.append(post.crosspost_parent_list[0]['media']['reddit_video']['fallback_url'].split("?", 1)[0])
 
     else:
-        image_urls.append(submission.url)
-    return 0
+        image_urls.append(post.url)
+    return image_urls
 
 
-# upload found images to imgur by url
-def uploadToImgur():
-    global submission
-    try:
-        imgur_client.refresh_access_token()
-    except Exception as exception:
-        logging.error("Can't refresh imgur token")
-        logging.error(exception)
-        return None
+# upload images to imgur by url
+def uploadToImgur(image_urls):
+    imgur_ids = []
+    access_token = get_imgur_access_token()
+    if access_token == 0:
+        logging.error("Couldn't renew access token")
+        return 0
 
     for url in image_urls:
         try:
-            imgur_post = imgur_client.upload_image(title=submission.title, image=url)
-        except Exception as exception:
-            logging.error("Can't upload to imgur")
-            logging.error(exception)
+            response = requests.post('https://api.imgur.com/3/upload', data={'image': url, 'type': 'url', 'disable_audio': '0'}, headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            logging.warning("Imgur returned an error:")
+            logging.warning(err)
             continue
-        imgur_ids.append(imgur_post.id)
+        imgur_post = response.json()['data']['id']
+        imgur_ids.append(imgur_post)
 
     if len(imgur_ids) > 1:
-        imgur_album = imgur_client.create_album(title=submission.title, images=imgur_ids)
-        imgur_post_url = imgur_album.link
+        try:
+            response = requests.post('https://api.imgur.com/3/album', data={'ids[]': imgur_ids, 'title': submission.title}, headers={'Authorization': ('Bearer ' + access_token)})
+            response.raise_for_status()
+            imgur_album = response.json()['data']
+            imgur_album_id = imgur_album['id']
+            imgur_post_url = "https://imgur.com/a/" + imgur_album_id
+            return imgur_post_url
+        except requests.exceptions.HTTPError as err:
+            logging.warning("Imgur returned an error:")
+            logging.warning(err)
+
     elif len(imgur_ids) == 1:
-        imgur_post_url = imgur_client.get_image(imgur_ids[0]).link
+        imgur_post_url = "https://imgur.com/" + imgur_ids[0]
+        return imgur_post_url
     else:
         logging.info("empty posts url")
         return 0
 
-    return imgur_post_url
-
 
 # check if a submission is a crosspost, comment that people can vote
-def main():
+def main(submission):
+    image_urls = []
     COMPLETE_REPLY = ""
-    global submission
 
     logging.info(submission.title.encode('ascii', 'ignore').decode('ascii'))
 
@@ -177,14 +214,33 @@ def main():
         return 0
 
     if hasattr(submission, "crosspost_parent") and not submission.crosspost_parent_list[0]['is_self']:
-        getImageUrlsFromPost()
-        imgur_post_url = uploadToImgur()
-        if imgur_post_url:
-            COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
-        else:
-            logging.info("nothing to do here")
+        logging.info("found crosspost")
+        image_urls = getImageUrlsFromPost(submission)
+
+    elif "imgur.com" in submission.url:
+        logging.info("found imgur link post")
+        image_urls = getImageUrlsFromPost(submission)
+
+    elif hasattr(submission, "post_hint") and submission.post_hint == "link":
+        logging.info("found linked post")
+        try:
+            linked_submission = reddit.submission(url=submission.url)
+            image_urls = getImageUrlsFromPost(linked_submission)
+        except Exception as exception:
+            logging.warning("Probably linked post, but can't get media")
+            logging.warning(exception)
+
+    if image_urls:
+        imgur_post_url = uploadToImgur(image_urls)
     else:
-        logging.info("not a crosspost")
+        logging.warning("didn't get any image urls")
+        imgur_post_url = None
+
+    if "not an ar" in submission.title.lower():
+        COMPLETE_REPLY += "Non AR stuff goes in r/FirearmsHallOfShame  \n"
+
+    if imgur_post_url:
+        COMPLETE_REPLY += IMGUR_REPLY.format(imgur_post_url)
 
     COMPLETE_REPLY += GENERAL_TEMPLATE
 
@@ -195,21 +251,18 @@ def main():
         logging.error("writing comment failed")
         logging.error(exception)
 
-    image_urls.clear()
-    imgur_ids.clear()
     logging.info('done')
     return 0
 
 
 # wait for new submission in subreddit stream
 if __name__ == "__main__":
-    get_imgur_session()
     clear_backlog()
     logging.info("done with backlog")
     try:
         for submission in subreddit.stream.submissions(skip_existing=True):
             logging.info("detected new post")
-            main()
+            main(submission)
     except PRAWException as e:
         logging.error("reading submission stream failed")
         logging.error(e)
