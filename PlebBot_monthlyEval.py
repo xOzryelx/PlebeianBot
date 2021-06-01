@@ -101,7 +101,7 @@ def createTableVotes(sortedListVotes):
 # Post text template
 def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
     replyBlank = """Hello r/PlebeianAR  \n\n
-This is the March 2021 evaluation. This time actually on time and improved as promised.  \n
+This is the May 2021 evaluation. Sadly missed the one for April, sorry.  \n
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
 Since I have five weeks of spare time, let me know what you want to see here in the next weeks.  \n
 For starters here are all the images I saved packed together in one [Imgur album](https://imgur.com/a/iLMaLPr)  \n  
@@ -158,7 +158,7 @@ def main():
     tableWorst = createTableScore(worstScore)
 
     postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
-    subreddit.submit(title="Pleb Vote Evaluation March", selftext=postText)
+    subreddit.submit(title="Pleb Vote Evaluation May", selftext=postText)
 
     return 0
 
