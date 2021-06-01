@@ -4,7 +4,10 @@ import praw
 import logging
 from dateutil.relativedelta import relativedelta
 from prettytable import PrettyTable, MARKDOWN
+
 # import sys
+
+month = "May"
 
 # build 28.01.21-2
 
@@ -101,14 +104,14 @@ def createTableVotes(sortedListVotes):
 # Post text template
 def makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst):
     replyBlank = """Hello r/PlebeianAR  \n\n
-This is the May 2021 evaluation. Sadly missed the one for April, sorry.  \n
+This is the {month} 2021 evaluation. Sadly missed the one for April, sorry.  \n
 You are still welcome to help with my development on [github](https://github.com/xOzryelx/PlebeianBot) or message u/xOzryelx who created me.  \n\n
 Since I have five weeks of spare time, let me know what you want to see here in the next weeks.  \n
 For starters here are all the images I saved packed together in one [Imgur album](https://imgur.com/a/iLMaLPr)  \n  
 
   \n
   \n
-So in March we had a total score of **{aggregatedPlebScore}** on **{numberOfPosts}** posts. The average post got a score of **{totalAverage}**  \n\n
+So in {month} we had a total score of **{aggregatedPlebScore}** on **{numberOfPosts}** posts. The average post got a score of **{totalAverage}**  \n\n
   \n
 **Highest Pleb Score:**  \n\n
 {overallPlebScore}  \n\n
@@ -125,7 +128,7 @@ So in March we had a total score of **{aggregatedPlebScore}** on **{numberOfPost
 
 """
 
-    formattedReply = replyBlank.format(aggregatedPlebScore=aggregatedPlebScore, numberOfPosts=numberOfPosts, totalAverage=totalAverage, overallPlebScore=tableScore, mostVotes=tableVotes, worstPost=tableWorst)
+    formattedReply = replyBlank.format(month=month, aggregatedPlebScore=aggregatedPlebScore, numberOfPosts=numberOfPosts, totalAverage=totalAverage, overallPlebScore=tableScore, mostVotes=tableVotes, worstPost=tableWorst)
 
     return formattedReply
 
@@ -136,7 +139,7 @@ def main():
     aggregatedPlebScore = 0
 
     for post in commentHistory:
-        if datetime.datetime.utcfromtimestamp(1622505600) > datetime.datetime.today() + relativedelta(months=-1):
+        if datetime.datetime.utcfromtimestamp(1622505600) > datetime.datetime.utcfromtimestamp(commentHistory[post]["post_timestamp"]) > datetime.datetime.today() + relativedelta(months=-1):
             ranking[post] = readVotesOverall(post)
         else:
             logging.info("not in time range")
@@ -158,6 +161,7 @@ def main():
     tableWorst = createTableScore(worstScore)
 
     postText = makePost(aggregatedPlebScore, numberOfPosts, totalAverage, tableScore, tableVotes, tableWorst)
+    # print(postText)
     subreddit.submit(title="Pleb Vote Evaluation May", selftext=postText)
 
     return 0
