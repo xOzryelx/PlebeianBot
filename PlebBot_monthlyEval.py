@@ -136,7 +136,7 @@ def main():
     aggregatedPlebScore = 0
 
     for post in commentHistory:
-        if datetime.datetime.utcfromtimestamp(1619827200) > datetime.datetime.today() + relativedelta(months=-1):
+        if datetime.datetime.utcfromtimestamp(1622505600) > datetime.datetime.today() + relativedelta(months=-1):
             ranking[post] = readVotesOverall(post)
         else:
             logging.info("not in time range")
